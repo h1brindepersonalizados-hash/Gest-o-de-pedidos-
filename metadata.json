@@ -1,0 +1,5 @@
+{
+  "name": "Gestão de Pedidos",
+  "description": "Aplicativo simples de gestão de pedidos personalizados com foco em controle por data.",
+  "requestFramePermissions": []
+}
