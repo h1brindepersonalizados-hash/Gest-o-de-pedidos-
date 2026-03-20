@@ -33,31 +33,27 @@ export function DayOrdersModal({
 
   const getStatusColor = (status: Order['status']) => {
     switch (status) {
-      case 'pendente':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'em_producao':
-        return 'bg-blue-100 text-blue-800';
-      case 'enviado':
-        return 'bg-purple-100 text-purple-800';
-      case 'concluido':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      case 'pendente': return 'bg-yellow-100 text-yellow-800';
+      case 'aguardando_arte': return 'bg-orange-100 text-orange-800';
+      case 'imprimir': return 'bg-cyan-100 text-cyan-800';
+      case 'costura': return 'bg-pink-100 text-pink-800';
+      case 'em_producao': return 'bg-blue-100 text-blue-800';
+      case 'enviado': return 'bg-purple-100 text-purple-800';
+      case 'concluido': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getStatusText = (status: Order['status']) => {
     switch (status) {
-      case 'pendente':
-        return 'Pendente';
-      case 'em_producao':
-        return 'Em Produção';
-      case 'enviado':
-        return 'Enviado';
-      case 'concluido':
-        return 'Concluído';
-      default:
-        return status;
+      case 'pendente': return 'Pendente';
+      case 'aguardando_arte': return 'Aguardando Arte';
+      case 'imprimir': return 'Imprimir';
+      case 'costura': return 'Costura';
+      case 'em_producao': return 'Em Produção';
+      case 'enviado': return 'Enviado';
+      case 'concluido': return 'Concluído';
+      default: return status;
     }
   };
 
@@ -91,6 +87,16 @@ export function DayOrdersModal({
                     <div>
                       <h3 className="font-semibold text-gray-800">{order.clientName}</h3>
                       <p className="text-sm text-gray-600">{order.product}</p>
+                      <div className="mt-1 flex flex-col gap-0.5 text-xs">
+                        {order.seamstressDate && (
+                          <span className="text-pink-600 font-medium">
+                            Costura: {format(parseISO(order.seamstressDate), "dd/MM/yyyy")}
+                          </span>
+                        )}
+                        <span className="text-sky-600 font-medium">
+                          Envio: {format(parseISO(order.deliveryDate), "dd/MM/yyyy")}
+                        </span>
+                      </div>
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -140,8 +146,13 @@ export function DayOrdersModal({
                       {getStatusText(order.status)}
                     </span>
                     <span className="rounded-full bg-gray-200 px-2.5 py-0.5 text-xs font-medium text-gray-700">
-                      {formatCurrency(order.value)}
+                      Total: {formatCurrency(order.value)}
                     </span>
+                    {order.downPayment ? (
+                      <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-medium text-sky-700">
+                        Entrada: {formatCurrency(order.downPayment)}
+                      </span>
+                    ) : null}
                   </div>
 
                   {order.notes && (

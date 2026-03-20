@@ -18,6 +18,9 @@ export function OrderList({ orders, onEdit, onDelete, emptyMessage = "Nenhum ped
   const getStatusColor = (status: Order['status']) => {
     switch (status) {
       case 'pendente': return 'bg-yellow-100 text-yellow-800';
+      case 'aguardando_arte': return 'bg-orange-100 text-orange-800';
+      case 'imprimir': return 'bg-cyan-100 text-cyan-800';
+      case 'costura': return 'bg-pink-100 text-pink-800';
       case 'em_producao': return 'bg-blue-100 text-blue-800';
       case 'enviado': return 'bg-purple-100 text-purple-800';
       case 'concluido': return 'bg-green-100 text-green-800';
@@ -28,6 +31,9 @@ export function OrderList({ orders, onEdit, onDelete, emptyMessage = "Nenhum ped
   const getStatusText = (status: Order['status']) => {
     switch (status) {
       case 'pendente': return 'Pendente';
+      case 'aguardando_arte': return 'Aguardando Arte';
+      case 'imprimir': return 'Imprimir';
+      case 'costura': return 'Costura';
       case 'em_producao': return 'Em Produção';
       case 'enviado': return 'Enviado';
       case 'concluido': return 'Concluído';
@@ -51,8 +57,9 @@ export function OrderList({ orders, onEdit, onDelete, emptyMessage = "Nenhum ped
           <thead className="bg-gray-50 text-gray-900 border-b border-gray-100">
             <tr>
               <th className="px-6 py-4 font-semibold">Cliente / Produto</th>
-              <th className="px-6 py-4 font-semibold">Data de Entrega</th>
-              <th className="px-6 py-4 font-semibold">Valor</th>
+              <th className="px-6 py-4 font-semibold">Datas (Costureira / Envio)</th>
+              <th className="px-6 py-4 font-semibold">Valor Total</th>
+              <th className="px-6 py-4 font-semibold">Entrada</th>
               <th className="px-6 py-4 font-semibold">Status</th>
               <th className="px-6 py-4 font-semibold">Orçamento</th>
               <th className="px-6 py-4 font-semibold text-right">Ações</th>
@@ -66,10 +73,22 @@ export function OrderList({ orders, onEdit, onDelete, emptyMessage = "Nenhum ped
                   <div className="text-gray-500">{order.product}</div>
                 </td>
                 <td className="px-6 py-4">
-                  {format(parseISO(order.deliveryDate), "dd 'de' MMM, yyyy", { locale: ptBR })}
+                  <div className="flex flex-col gap-1 text-sm">
+                    {order.seamstressDate && (
+                      <span className="text-pink-600 font-medium" title="Data Limite Costureira">
+                        Costura: {format(parseISO(order.seamstressDate), "dd/MM/yyyy")}
+                      </span>
+                    )}
+                    <span className="text-sky-600 font-medium" title="Data de Envio ao Cliente">
+                      Envio: {format(parseISO(order.deliveryDate), "dd/MM/yyyy")}
+                    </span>
+                  </div>
                 </td>
                 <td className="px-6 py-4 font-medium text-gray-900">
                   {formatCurrency(order.value)}
+                </td>
+                <td className="px-6 py-4 text-gray-600">
+                  {order.downPayment ? formatCurrency(order.downPayment) : '-'}
                 </td>
                 <td className="px-6 py-4">
                   <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusColor(order.status)}`}>

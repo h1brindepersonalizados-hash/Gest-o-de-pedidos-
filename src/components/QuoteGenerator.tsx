@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, FileText, CheckCircle, Printer, Upload, Settings, ChevronDown, ChevronUp } from 'lucide-react';
-import { formatCurrency } from '../utils';
-import { Order } from '../types';
+import { Plus, Trash2, FileText, CheckCircle, Printer, Upload, Settings, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
+import { formatCurrency, isValidDocument } from '../utils';
+import { Order, Product } from '../types';
 
 interface QuoteItem {
   id: string;
@@ -12,15 +12,27 @@ interface QuoteItem {
 
 interface QuoteGeneratorProps {
   onCreateOrder: (prefilledData: Partial<Order>) => void;
+  products?: Product[];
 }
 
-export function QuoteGenerator({ onCreateOrder }: QuoteGeneratorProps) {
+export function QuoteGenerator({ onCreateOrder, products = [] }: QuoteGeneratorProps) {
+  const [quoteNumber, setQuoteNumber] = useState('');
   const [clientName, setClientName] = useState('');
+  const [clientDocument, setClientDocument] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [addressNumber, setAddressNumber] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
+  const [zipCode, setZipCode] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [theme, setTheme] = useState('');
+
   const [items, setItems] = useState<QuoteItem[]>([{ id: '1', description: '', quantity: 1, unitPrice: 0 }]);
   const [discount, setDiscount] = useState<number>(0);
   const [shipping, setShipping] = useState<number>(0);
+  const [downPayment, setDownPayment] = useState<number>(0);
   const [notes, setNotes] = useState('');
-  const [validityDays, setValidityDays] = useState(15);
   
   const [showSettings, setShowSettings] = useState(false);
   const [company, setCompany] = useState({
@@ -37,6 +49,27 @@ export function QuoteGenerator({ onCreateOrder }: QuoteGeneratorProps) {
       const reader = new FileReader();
       reader.onloadend = () => setCompany({ ...company, logo: reader.result as string });
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newCep = e.target.value;
+    setZipCode(newCep);
+    
+    const cleanCep = newCep.replace(/\D/g, '');
+    if (cleanCep.length === 8) {
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+        const data = await response.json();
+        if (!data.erro) {
+          setAddress(data.logradouro || '');
+          setNeighborhood(data.bairro || '');
+          setCity(data.localidade || '');
+          setState(data.uf || '');
+        }
+      } catch (error) {
+        console.error("Erro ao buscar CEP:", error);
+      }
     }
   };
 
@@ -71,7 +104,12 @@ export function QuoteGenerator({ onCreateOrder }: QuoteGeneratorProps) {
     const productDescription = items.map(i => `${i.quantity}x ${i.description}`).join(', ');
     
     let generatedNotes = `--- ORÇAMENTO APROVADO ---\n`;
-    generatedNotes += `Validade original: ${validityDays} dias\n`;
+    if (quoteNumber) generatedNotes += `Nº Orçamento: ${quoteNumber}\n`;
+    if (clientDocument) generatedNotes += `CPF/CNPJ: ${clientDocument}\n`;
+    if (clientPhone) generatedNotes += `Telefone: ${clientPhone}\n`;
+    if (theme) generatedNotes += `Tema/Empresa: ${theme}\n`;
+    generatedNotes += `\nEndereço de Entrega:\n${address}, ${addressNumber} - ${neighborhood}\nCEP: ${zipCode} - ${city}/${state}\n\n`;
+    
     items.forEach(i => {
       generatedNotes += `- ${i.quantity}x ${i.description} (${formatCurrency(i.unitPrice)} un) = ${formatCurrency(i.quantity * i.unitPrice)}\n`;
     });
@@ -79,12 +117,14 @@ export function QuoteGenerator({ onCreateOrder }: QuoteGeneratorProps) {
     if (discount > 0) generatedNotes += `Desconto: -${formatCurrency(discount)}\n`;
     if (shipping > 0) generatedNotes += `Frete: ${formatCurrency(shipping)}\n`;
     generatedNotes += `Total Final: ${formatCurrency(total)}\n`;
+    if (downPayment > 0) generatedNotes += `Entrada Sugerida: ${formatCurrency(downPayment)}\n`;
     if (notes) generatedNotes += `\nObservações: ${notes}`;
 
     onCreateOrder({
       clientName,
       product: productDescription,
       value: total,
+      downPayment: downPayment,
       notes: generatedNotes,
       status: 'pendente'
     });
@@ -140,8 +180,17 @@ export function QuoteGenerator({ onCreateOrder }: QuoteGeneratorProps) {
                     value={company.document}
                     onChange={(e) => setCompany({ ...company, document: e.target.value })}
                     placeholder="00.000.000/0001-00"
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 bg-white"
+                    className={`w-full rounded-lg border px-4 py-2 outline-none focus:ring-1 bg-white ${
+                      company.document.replace(/\D/g, '').length > 0 && !isValidDocument(company.document)
+                        ? 'border-red-300 focus:border-red-400 focus:ring-red-400'
+                        : 'border-gray-300 focus:border-sky-400 focus:ring-sky-400'
+                    }`}
                   />
+                  {company.document.replace(/\D/g, '').length > 0 && !isValidDocument(company.document) && (
+                    <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" /> CPF ou CNPJ inválido
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Telefone / WhatsApp</label>
@@ -186,7 +235,17 @@ export function QuoteGenerator({ onCreateOrder }: QuoteGeneratorProps) {
 
           <div className="space-y-6">
             {/* Client Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Número do Orçamento</label>
+                <input
+                  type="text"
+                  value={quoteNumber}
+                  onChange={(e) => setQuoteNumber(e.target.value)}
+                  placeholder="Ex: 001/2026"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Cliente</label>
                 <input
@@ -198,15 +257,109 @@ export function QuoteGenerator({ onCreateOrder }: QuoteGeneratorProps) {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Validade (dias)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">CPF / CNPJ</label>
                 <input
-                  type="number"
-                  min="1"
-                  value={validityDays}
-                  onChange={(e) => setValidityDays(parseInt(e.target.value) || 0)}
+                  type="text"
+                  value={clientDocument}
+                  onChange={(e) => setClientDocument(e.target.value)}
+                  placeholder="000.000.000-00"
+                  className={`w-full rounded-lg border px-4 py-2 outline-none focus:ring-1 ${
+                    clientDocument.replace(/\D/g, '').length > 0 && !isValidDocument(clientDocument)
+                      ? 'border-red-300 focus:border-red-400 focus:ring-red-400'
+                      : 'border-gray-300 focus:border-sky-400 focus:ring-sky-400'
+                  }`}
+                />
+                {clientDocument.replace(/\D/g, '').length > 0 && !isValidDocument(clientDocument) && (
+                  <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> Documento inválido
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                <input
+                  type="text"
+                  value={clientPhone}
+                  onChange={(e) => setClientPhone(e.target.value)}
+                  placeholder="(00) 00000-0000"
                   className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
                 />
               </div>
+            </div>
+
+            {/* Delivery Address */}
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-4">
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Endereço de Entrega</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">CEP</label>
+                  <input
+                    type="text"
+                    value={zipCode}
+                    onChange={handleCepChange}
+                    placeholder="00000-000"
+                    maxLength={9}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 bg-white"
+                  />
+                </div>
+                <div className="md:col-span-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
+                  <input
+                    type="text"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Número</label>
+                  <input
+                    type="text"
+                    value={addressNumber}
+                    onChange={(e) => setAddressNumber(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 bg-white"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
+                  <input
+                    type="text"
+                    value={neighborhood}
+                    onChange={(e) => setNeighborhood(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
+                  <input
+                    type="text"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                  <input
+                    type="text"
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 bg-white"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Theme */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tema ou Empresa</label>
+              <input
+                type="text"
+                value={theme}
+                onChange={(e) => setTheme(e.target.value)}
+                placeholder="Ex: Festa Infantil, Casamento, Nome da Empresa"
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
+              />
             </div>
 
             {/* Items */}
@@ -234,15 +387,39 @@ export function QuoteGenerator({ onCreateOrder }: QuoteGeneratorProps) {
                         className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 text-center"
                       />
                     </div>
-                    <div className="flex-1 w-full">
-                      <label className="block sm:hidden text-xs text-gray-500 mb-1">Descrição</label>
+                    <div className="flex-1 w-full relative">
+                      <label className="block sm:hidden text-xs text-gray-500 mb-1">Produto/Serviço</label>
                       <input
                         type="text"
+                        list={`products-list-${item.id}`}
                         value={item.description}
-                        onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                        placeholder="Descrição do produto/serviço"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          updateItem(item.id, 'description', val);
+                          
+                          // Auto-fill price if a product is selected
+                          const selectedProduct = products.find(p => 
+                            p.description === val || 
+                            (p.code && `${p.code} - ${p.description}` === val)
+                          );
+                          if (selectedProduct) {
+                            updateItem(item.id, 'unitPrice', selectedProduct.price);
+                            // Also update description to just the name if they selected the code+name format
+                            if (val === `${selectedProduct.code} - ${selectedProduct.description}`) {
+                              updateItem(item.id, 'description', selectedProduct.description);
+                            }
+                          }
+                        }}
+                        placeholder="Selecione ou digite o produto/serviço"
                         className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
                       />
+                      <datalist id={`products-list-${item.id}`}>
+                        {products.map(p => (
+                          <option key={p.id} value={p.code ? `${p.code} - ${p.description}` : p.description}>
+                            {formatCurrency(p.price)}
+                          </option>
+                        ))}
+                      </datalist>
                     </div>
                     <div className="w-full sm:w-32">
                       <label className="block sm:hidden text-xs text-gray-500 mb-1">Valor Unit. (R$)</label>
@@ -313,6 +490,17 @@ export function QuoteGenerator({ onCreateOrder }: QuoteGeneratorProps) {
                     className="w-24 rounded-lg border border-gray-300 px-2 py-1 text-right outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
                   />
                 </div>
+                <div className="flex justify-between items-center text-sm text-gray-600">
+                  <span>Entrada Sugerida (R$)</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={downPayment}
+                    onChange={(e) => setDownPayment(parseFloat(e.target.value) || 0)}
+                    className="w-24 rounded-lg border border-gray-300 px-2 py-1 text-right outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
+                  />
+                </div>
                 <div className="pt-3 border-t border-gray-200 flex justify-between items-center">
                   <span className="text-base font-semibold text-gray-900">Total Final</span>
                   <span className="text-xl font-bold text-sky-500">{formatCurrency(total)}</span>
@@ -364,16 +552,24 @@ export function QuoteGenerator({ onCreateOrder }: QuoteGeneratorProps) {
 
         {/* Info */}
         <div className="mb-8">
-          <h2 className="text-3xl font-light text-gray-800 mb-6">ORÇAMENTO</h2>
+          <div className="flex justify-between items-end mb-6">
+            <h2 className="text-3xl font-light text-gray-800">ORÇAMENTO</h2>
+            {quoteNumber && <p className="text-lg font-medium text-gray-600">Nº {quoteNumber}</p>}
+          </div>
           <div className="grid grid-cols-2 gap-8">
             <div>
               <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1">Cliente</p>
               <p className="text-lg font-medium text-gray-900">{clientName || 'Cliente não informado'}</p>
+              {clientDocument && <p className="text-gray-600 mt-1">CPF/CNPJ: {clientDocument}</p>}
+              {clientPhone && <p className="text-gray-600 mt-1">Tel: {clientPhone}</p>}
+              {theme && <p className="text-gray-600 mt-1">Tema/Empresa: {theme}</p>}
             </div>
             <div className="text-right">
-              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1">Data e Validade</p>
-              <p className="text-gray-900">Data: {new Date().toLocaleDateString('pt-BR')}</p>
-              <p className="text-gray-900">Válido por: {validityDays} dias</p>
+              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1">Endereço de Entrega</p>
+              <p className="text-gray-900">{address}{addressNumber ? `, ${addressNumber}` : ''}</p>
+              <p className="text-gray-900">{neighborhood}</p>
+              <p className="text-gray-900">{city}{state ? ` - ${state}` : ''}</p>
+              <p className="text-gray-900">{zipCode}</p>
             </div>
           </div>
         </div>
@@ -423,6 +619,12 @@ export function QuoteGenerator({ onCreateOrder }: QuoteGeneratorProps) {
               <span>Total Final</span>
               <span>{formatCurrency(total)}</span>
             </div>
+            {downPayment > 0 && (
+              <div className="flex justify-between text-gray-600 pt-2">
+                <span>Entrada Sugerida</span>
+                <span className="font-medium text-sky-600">{formatCurrency(downPayment)}</span>
+              </div>
+            )}
           </div>
         </div>
 

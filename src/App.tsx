@@ -1,19 +1,22 @@
 import React, { useState, useMemo } from 'react';
 import { useOrders } from './hooks/useOrders';
+import { useProducts } from './hooks/useProducts';
 import { Calendar } from './components/Calendar';
 import { Dashboard } from './components/Dashboard';
 import { OrderModal } from './components/OrderModal';
 import { DayOrdersModal } from './components/DayOrdersModal';
 import { OrderList } from './components/OrderList';
 import { QuoteGenerator } from './components/QuoteGenerator';
+import { ProductList } from './components/ProductList';
 import { Order } from './types';
 import { addMonths, subMonths, format, parseISO, isBefore, startOfDay, isSameDay } from 'date-fns';
-import { Plus, Search, Package2, LayoutDashboard, AlertTriangle, Clock, CalendarDays, Menu, X, Calculator } from 'lucide-react';
+import { Plus, Search, Package2, LayoutDashboard, AlertTriangle, Clock, CalendarDays, Menu, X, Calculator, Send, Download, Package } from 'lucide-react';
 
-type ViewMode = 'dashboard' | 'today' | 'production' | 'delayed' | 'search' | 'quote-generator';
+type ViewMode = 'dashboard' | 'today' | 'production' | 'delayed' | 'search' | 'quote-generator' | 'sent' | 'products';
 
 export default function App() {
   const { orders, addOrder, updateOrder, deleteOrder } = useOrders();
+  const { products, addProduct, updateProduct, deleteProduct } = useProducts();
   const [currentDate, setCurrentDate] = useState(new Date());
   
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
@@ -72,8 +75,38 @@ export default function App() {
   ), [orders, today]);
 
   const productionOrders = useMemo(() => orders.filter(
-    (o) => o.status === 'em_producao'
+    (o) => o.status === 'em_producao' || o.status === 'aguardando_arte' || o.status === 'imprimir' || o.status === 'costura'
   ), [orders]);
+
+  const sentOrders = useMemo(() => orders.filter(
+    (o) => o.status === 'enviado'
+  ), [orders]);
+
+  const handleDownloadSentOrders = () => {
+    const csvContent = [
+      ['Data Costureira', 'Data Envio', 'Cliente', 'Produto', 'Valor Total', 'Entrada', 'Status', 'Observacoes'].join(','),
+      ...sentOrders.map(o => [
+        o.seamstressDate || '',
+        o.deliveryDate,
+        `"${o.clientName}"`,
+        `"${o.product}"`,
+        o.value,
+        o.downPayment || 0,
+        o.status,
+        `"${o.notes || ''}"`
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `pedidos_enviados_${format(new Date(), 'yyyy_MM')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
@@ -166,8 +199,10 @@ export default function App() {
           <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
             <NavItem icon={LayoutDashboard} label="Visão Geral" mode="dashboard" />
             <NavItem icon={Calculator} label="Gerador de Orçamento" mode="quote-generator" />
+            <NavItem icon={Package} label="Produtos" mode="products" />
             <NavItem icon={CalendarDays} label="Entregar Hoje" mode="today" count={todayOrders.length} />
             <NavItem icon={Clock} label="Em Produção" mode="production" count={productionOrders.length} />
+            <NavItem icon={Send} label="Enviados" mode="sent" count={sentOrders.length} />
             <NavItem icon={AlertTriangle} label="Atrasados" mode="delayed" count={delayedOrders.length} />
           </nav>
         </div>
@@ -207,8 +242,10 @@ export default function App() {
             <h2 className="text-xl font-semibold text-pink-600 hidden sm:block capitalize">
               {viewMode === 'dashboard' ? 'Visão Geral' : 
                viewMode === 'quote-generator' ? 'Gerador de Orçamento' :
+               viewMode === 'products' ? 'Produtos' :
                viewMode === 'today' ? 'Entregar Hoje' : 
                viewMode === 'production' ? 'Em Produção' : 
+               viewMode === 'sent' ? 'Pedidos Enviados' :
                viewMode === 'delayed' ? 'Pedidos Atrasados' : 'Resultados da Busca'}
             </h2>
             <div className="relative w-full sm:max-w-xs">
@@ -237,7 +274,14 @@ export default function App() {
                 emptyMessage={`Nenhum pedido encontrado para "${searchQuery}"`}
               />
             ) : viewMode === 'quote-generator' ? (
-              <QuoteGenerator onCreateOrder={handleCreateOrderFromQuote} />
+              <QuoteGenerator onCreateOrder={handleCreateOrderFromQuote} products={products} />
+            ) : viewMode === 'products' ? (
+              <ProductList 
+                products={products}
+                onAdd={addProduct}
+                onUpdate={updateProduct}
+                onDelete={deleteProduct}
+              />
             ) : viewMode === 'today' ? (
               <OrderList 
                 orders={todayOrders} 
@@ -252,6 +296,24 @@ export default function App() {
                 onDelete={deleteOrder}
                 emptyMessage="Nenhum pedido em produção no momento."
               />
+            ) : viewMode === 'sent' ? (
+              <div className="space-y-4">
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleDownloadSentOrders}
+                    className="flex items-center gap-2 rounded-lg bg-sky-100 px-4 py-2 text-sm font-medium text-sky-700 hover:bg-sky-200"
+                  >
+                    <Download className="h-4 w-4" />
+                    Baixar Relatório (CSV)
+                  </button>
+                </div>
+                <OrderList 
+                  orders={sentOrders} 
+                  onEdit={handleEditOrder} 
+                  onDelete={deleteOrder}
+                  emptyMessage="Nenhum pedido enviado no momento."
+                />
+              </div>
             ) : viewMode === 'delayed' ? (
               <OrderList 
                 orders={delayedOrders} 

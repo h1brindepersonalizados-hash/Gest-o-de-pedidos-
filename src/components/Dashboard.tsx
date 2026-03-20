@@ -1,7 +1,7 @@
 import React from 'react';
 import { Order } from '../types';
 import { formatCurrency } from '../utils';
-import { TrendingUp, Clock, AlertCircle, CalendarDays } from 'lucide-react';
+import { TrendingUp, Clock, AlertCircle, CalendarDays, DollarSign } from 'lucide-react';
 import { isBefore, startOfDay, parseISO, isSameDay, isSameMonth } from 'date-fns';
 
 interface DashboardProps {
@@ -15,6 +15,7 @@ export function Dashboard({ orders, currentDate }: DashboardProps) {
   );
 
   const totalSales = monthOrders.reduce((acc, curr) => acc + curr.value, 0);
+  const totalDownPayments = monthOrders.reduce((acc, curr) => acc + (curr.downPayment || 0), 0);
   
   const today = startOfDay(new Date());
 
@@ -31,13 +32,21 @@ export function Dashboard({ orders, currentDate }: DashboardProps) {
   const inProductionCount = orders.filter((o) => o.status === 'em_producao').length;
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
       <div className="rounded-2xl bg-white p-4 shadow-sm border border-gray-100">
         <div className="mb-2 flex items-center gap-2 text-gray-500">
           <TrendingUp className="h-4 w-4" />
           <span className="text-xs font-medium uppercase tracking-wider">Vendas no Mês</span>
         </div>
         <p className="text-2xl font-bold text-pink-600">{formatCurrency(totalSales)}</p>
+      </div>
+
+      <div className="rounded-2xl bg-sky-50 p-4 shadow-sm border border-sky-100">
+        <div className="mb-2 flex items-center gap-2 text-sky-600">
+          <DollarSign className="h-4 w-4" />
+          <span className="text-xs font-medium uppercase tracking-wider">Entradas</span>
+        </div>
+        <p className="text-2xl font-bold text-sky-700">{formatCurrency(totalDownPayments)}</p>
       </div>
 
       <div className="rounded-2xl bg-red-50 p-4 shadow-sm border border-red-100">

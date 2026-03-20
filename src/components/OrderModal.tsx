@@ -15,7 +15,9 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
   const [clientName, setClientName] = useState('');
   const [product, setProduct] = useState('');
   const [value, setValue] = useState('');
+  const [downPayment, setDownPayment] = useState('');
   const [deliveryDate, setDeliveryDate] = useState('');
+  const [seamstressDate, setSeamstressDate] = useState('');
   const [status, setStatus] = useState<OrderStatus>('pendente');
   const [notes, setNotes] = useState('');
   const [quoteFile, setQuoteFile] = useState<{ name: string; data: string } | undefined>();
@@ -25,7 +27,9 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
       setClientName(initialData.clientName);
       setProduct(initialData.product);
       setValue(initialData.value.toString());
+      setDownPayment(initialData.downPayment?.toString() || '');
       setDeliveryDate(initialData.deliveryDate);
+      setSeamstressDate(initialData.seamstressDate || '');
       setStatus(initialData.status);
       setNotes(initialData.notes);
       setQuoteFile(initialData.quoteFile);
@@ -33,7 +37,9 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
       setClientName(prefilledData.clientName || '');
       setProduct(prefilledData.product || '');
       setValue(prefilledData.value?.toString() || '');
+      setDownPayment(prefilledData.downPayment?.toString() || '');
       setDeliveryDate(prefilledData.deliveryDate || selectedDate || new Date().toISOString().split('T')[0]);
+      setSeamstressDate(prefilledData.seamstressDate || '');
       setStatus(prefilledData.status || 'pendente');
       setNotes(prefilledData.notes || '');
       setQuoteFile(prefilledData.quoteFile);
@@ -41,7 +47,9 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
       setClientName('');
       setProduct('');
       setValue('');
+      setDownPayment('');
       setDeliveryDate(selectedDate || new Date().toISOString().split('T')[0]);
+      setSeamstressDate('');
       setStatus('pendente');
       setNotes('');
       setQuoteFile(undefined);
@@ -56,7 +64,9 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
       clientName,
       product,
       value: parseFloat(value) || 0,
+      downPayment: parseFloat(downPayment) || 0,
       deliveryDate,
+      seamstressDate,
       status,
       notes,
       quoteFile,
@@ -124,7 +134,7 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Valor (R$)</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Valor Total (R$)</label>
               <input
                 type="number"
                 step="0.01"
@@ -137,7 +147,31 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Data de Entrega</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Entrada (R$)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={downPayment}
+                onChange={(e) => setDownPayment(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Data Limite (Costureira)</label>
+              <input
+                type="date"
+                value={seamstressDate}
+                onChange={(e) => setSeamstressDate(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Data de Envio (Cliente)</label>
               <input
                 type="date"
                 required
@@ -155,12 +189,15 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
               onChange={(e) => setStatus(e.target.value as OrderStatus)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
             >
-              <option value="pendente">Pendente</option>
-              <option value="em_producao">Em Produção</option>
-              <option value="enviado">Enviado</option>
-              <option value="concluido">Concluído</option>
-            </select>
-          </div>
+                <option value="pendente">Pendente</option>
+                <option value="aguardando_arte">Aguardando Arte</option>
+                <option value="imprimir">Imprimir</option>
+                <option value="costura">Costura</option>
+                <option value="em_producao">Em Produção</option>
+                <option value="enviado">Enviado</option>
+                <option value="concluido">Concluído</option>
+              </select>
+            </div>
 
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Observações</label>
