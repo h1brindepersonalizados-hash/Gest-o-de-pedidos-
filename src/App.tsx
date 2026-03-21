@@ -345,6 +345,7 @@ export default function App() {
         initialData={editingOrder}
         prefilledData={prefilledOrderData}
         selectedDate={selectedDateForNewOrder}
+        products={products}
       />
 
       <DayOrdersModal

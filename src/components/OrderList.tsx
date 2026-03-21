@@ -3,7 +3,7 @@ import { Order } from '../types';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrency } from '../utils';
-import { Edit2, Trash2, Paperclip, Package } from 'lucide-react';
+import { Edit2, Trash2, Paperclip, Package, Image as ImageIcon } from 'lucide-react';
 
 interface OrderListProps {
   orders: Order[];
@@ -61,6 +61,7 @@ export function OrderList({ orders, onEdit, onDelete, emptyMessage = "Nenhum ped
               <th className="px-6 py-4 font-semibold">Valor Total</th>
               <th className="px-6 py-4 font-semibold">Entrada</th>
               <th className="px-6 py-4 font-semibold">Status</th>
+              <th className="px-6 py-4 font-semibold">Arte</th>
               <th className="px-6 py-4 font-semibold">Orçamento</th>
               <th className="px-6 py-4 font-semibold text-right">Ações</th>
             </tr>
@@ -94,6 +95,22 @@ export function OrderList({ orders, onEdit, onDelete, emptyMessage = "Nenhum ped
                   <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusColor(order.status)}`}>
                     {getStatusText(order.status)}
                   </span>
+                </td>
+                <td className="px-6 py-4">
+                  {order.artwork ? (
+                    <a
+                      href={order.artwork.data}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sky-500 hover:text-sky-600"
+                      title={order.artwork.name}
+                    >
+                      <ImageIcon className="h-4 w-4" />
+                      <span className="truncate max-w-[100px]">{order.artwork.name}</span>
+                    </a>
+                  ) : (
+                    <span className="text-gray-400">-</span>
+                  )}
                 </td>
                 <td className="px-6 py-4">
                   {order.quoteFile ? (

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Order, OrderStatus } from '../types';
+import { Order, OrderStatus, Product } from '../types';
 import { X } from 'lucide-react';
+import { formatCurrency } from '../utils';
 
 interface OrderModalProps {
   isOpen: boolean;
@@ -9,9 +10,10 @@ interface OrderModalProps {
   initialData?: Order | null;
   prefilledData?: Partial<Order> | null;
   selectedDate?: string;
+  products?: Product[];
 }
 
-export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData, selectedDate }: OrderModalProps) {
+export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData, selectedDate, products = [] }: OrderModalProps) {
   const [clientName, setClientName] = useState('');
   const [product, setProduct] = useState('');
   const [value, setValue] = useState('');
@@ -21,6 +23,7 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
   const [status, setStatus] = useState<OrderStatus>('pendente');
   const [notes, setNotes] = useState('');
   const [quoteFile, setQuoteFile] = useState<{ name: string; data: string } | undefined>();
+  const [artwork, setArtwork] = useState<{ name: string; data: string } | undefined>();
 
   useEffect(() => {
     if (initialData) {
@@ -33,6 +36,7 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
       setStatus(initialData.status);
       setNotes(initialData.notes);
       setQuoteFile(initialData.quoteFile);
+      setArtwork(initialData.artwork);
     } else if (prefilledData) {
       setClientName(prefilledData.clientName || '');
       setProduct(prefilledData.product || '');
@@ -43,6 +47,7 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
       setStatus(prefilledData.status || 'pendente');
       setNotes(prefilledData.notes || '');
       setQuoteFile(prefilledData.quoteFile);
+      setArtwork(prefilledData.artwork);
     } else {
       setClientName('');
       setProduct('');
@@ -53,6 +58,7 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
       setStatus('pendente');
       setNotes('');
       setQuoteFile(undefined);
+      setArtwork(undefined);
     }
   }, [initialData, prefilledData, selectedDate, isOpen]);
 
@@ -70,6 +76,7 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
       status,
       notes,
       quoteFile,
+      artwork,
     };
 
     if (initialData) {
@@ -90,6 +97,21 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
       const reader = new FileReader();
       reader.onloadend = () => {
         setQuoteFile({ name: file.name, data: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleArtworkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert('O arquivo é muito grande. O limite é 2MB para armazenamento local.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setArtwork({ name: file.name, data: reader.result as string });
       };
       reader.readAsDataURL(file);
     }
@@ -120,16 +142,39 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
             />
           </div>
 
-          <div>
+          <div className="relative">
             <label className="mb-1 block text-sm font-medium text-gray-700">Produto Solicitado</label>
             <input
               type="text"
               required
+              list="modal-products-list"
               value={product}
-              onChange={(e) => setProduct(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setProduct(val);
+                
+                const selectedProduct = products.find(p => 
+                  p.description === val || 
+                  (p.code && `${p.code} - ${p.description}` === val)
+                );
+                
+                if (selectedProduct) {
+                  setValue(selectedProduct.price.toString());
+                  if (val === `${selectedProduct.code} - ${selectedProduct.description}`) {
+                    setProduct(selectedProduct.description);
+                  }
+                }
+              }}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
               placeholder="Ex: Caneca Personalizada"
             />
+            <datalist id="modal-products-list">
+              {products.map(p => (
+                <option key={p.id} value={p.code ? `${p.code} - ${p.description}` : p.description}>
+                  {formatCurrency(p.price)}
+                </option>
+              ))}
+            </datalist>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -208,6 +253,31 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
               className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
               placeholder="Detalhes adicionais do pedido..."
             />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Imagem da Arte (Opcional)</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleArtworkChange}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100"
+            />
+            {artwork && (
+              <div className="mt-2 flex items-center justify-between rounded-lg bg-gray-50 p-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <img src={artwork.data} alt="Arte" className="h-8 w-8 object-cover rounded" />
+                  <span className="truncate text-gray-600 max-w-[150px]">{artwork.name}</span>
+                </div>
+                <button 
+                  type="button" 
+                  onClick={() => setArtwork(undefined)}
+                  className="text-red-500 hover:text-red-700 font-medium"
+                >
+                  Remover
+                </button>
+              </div>
+            )}
           </div>
 
           <div>

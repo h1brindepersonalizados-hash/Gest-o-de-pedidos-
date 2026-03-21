@@ -84,7 +84,11 @@ export function QuoteGenerator({ onCreateOrder, products = [] }: QuoteGeneratorP
   };
 
   const updateItem = (id: string, field: keyof QuoteItem, value: any) => {
-    setItems(items.map(i => i.id === id ? { ...i, [field]: value } : i));
+    setItems(prev => prev.map(i => i.id === id ? { ...i, [field]: value } : i));
+  };
+
+  const updateItemFields = (id: string, updates: Partial<QuoteItem>) => {
+    setItems(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i));
   };
 
   const subtotal = items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
@@ -395,19 +399,24 @@ export function QuoteGenerator({ onCreateOrder, products = [] }: QuoteGeneratorP
                         value={item.description}
                         onChange={(e) => {
                           const val = e.target.value;
-                          updateItem(item.id, 'description', val);
                           
                           // Auto-fill price if a product is selected
                           const selectedProduct = products.find(p => 
                             p.description === val || 
                             (p.code && `${p.code} - ${p.description}` === val)
                           );
+                          
                           if (selectedProduct) {
-                            updateItem(item.id, 'unitPrice', selectedProduct.price);
-                            // Also update description to just the name if they selected the code+name format
-                            if (val === `${selectedProduct.code} - ${selectedProduct.description}`) {
-                              updateItem(item.id, 'description', selectedProduct.description);
-                            }
+                            const newDescription = val === `${selectedProduct.code} - ${selectedProduct.description}` 
+                              ? selectedProduct.description 
+                              : val;
+                              
+                            updateItemFields(item.id, {
+                              description: newDescription,
+                              unitPrice: selectedProduct.price
+                            });
+                          } else {
+                            updateItem(item.id, 'description', val);
                           }
                         }}
                         placeholder="Selecione ou digite o produto/serviço"

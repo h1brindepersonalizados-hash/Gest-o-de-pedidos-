@@ -18,4 +18,5 @@ export interface Order {
   status: OrderStatus;
   notes: string;
   quoteFile?: { name: string; data: string };
+  artwork?: { name: string; data: string };
 }

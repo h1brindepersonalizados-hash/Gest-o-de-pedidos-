@@ -1,6 +1,6 @@
 import React from 'react';
 import { Order } from '../types';
-import { X, Edit2, Trash2, Package, Paperclip } from 'lucide-react';
+import { X, Edit2, Trash2, Package, Paperclip, Image as ImageIcon } from 'lucide-react';
 import { formatCurrency } from '../utils';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -161,16 +161,29 @@ export function DayOrdersModal({
                     </div>
                   )}
 
-                  {order.quoteFile && (
-                    <div className="mt-3">
-                      <a
-                        href={order.quoteFile.data}
-                        download={order.quoteFile.name}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-sky-50 px-3 py-1.5 text-sm font-medium text-sky-700 hover:bg-sky-100 transition-colors"
-                      >
-                        <Paperclip className="h-4 w-4" />
-                        Ver Orçamento ({order.quoteFile.name})
-                      </a>
+                  {(order.quoteFile || order.artwork) && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {order.quoteFile && (
+                        <a
+                          href={order.quoteFile.data}
+                          download={order.quoteFile.name}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-sky-50 px-3 py-1.5 text-sm font-medium text-sky-700 hover:bg-sky-100 transition-colors"
+                        >
+                          <Paperclip className="h-4 w-4" />
+                          Ver Orçamento ({order.quoteFile.name})
+                        </a>
+                      )}
+                      {order.artwork && (
+                        <a
+                          href={order.artwork.data}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition-colors"
+                        >
+                          <ImageIcon className="h-4 w-4" />
+                          Ver Arte ({order.artwork.name})
+                        </a>
+                      )}
                     </div>
                   )}
                 </div>
