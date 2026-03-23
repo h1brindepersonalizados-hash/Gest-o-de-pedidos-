@@ -389,7 +389,7 @@ export default function App() {
       {printViewContent && (
         <div className="fixed inset-0 z-[100] bg-white print:block">
           <div className="h-full overflow-auto print:overflow-visible">
-            <div className="max-w-4xl mx-auto p-8 print:p-0">
+            <div className="max-w-4xl mx-auto p-8 print:p-0 print:max-w-none">
               <div className="flex items-center justify-between mb-8 print:hidden">
                 <p className="text-sm text-gray-500">
                   Dica: Se a impressão não abrir, tente abrir o aplicativo em uma nova aba.
