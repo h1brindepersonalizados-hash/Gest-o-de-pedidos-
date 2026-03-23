@@ -387,9 +387,9 @@ export default function App() {
 
       {/* Print View Container */}
       {printViewContent && (
-        <div className="fixed inset-0 z-[100] bg-white print:block">
-          <div className="h-full overflow-auto print:overflow-visible">
-            <div className="max-w-4xl mx-auto p-8 print:p-0 print:max-w-none">
+        <div className="fixed inset-0 z-[100] bg-white print:static print:inset-auto print:bg-transparent">
+          <div className="h-full overflow-auto print:h-auto print:overflow-visible">
+            <div className="max-w-4xl mx-auto p-8 print:p-0 print:max-w-none print:w-full print:m-0">
               <div className="flex items-center justify-between mb-8 print:hidden">
                 <p className="text-sm text-gray-500">
                   Dica: Se a impressão não abrir, tente abrir o aplicativo em uma nova aba.
@@ -411,7 +411,7 @@ export default function App() {
                   </button>
                 </div>
               </div>
-              <div className="print:w-[18cm] print:mx-auto">
+              <div className="print:w-full">
                 {printViewContent}
               </div>
             </div>

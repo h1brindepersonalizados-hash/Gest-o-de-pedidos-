@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, FileText, CheckCircle, Printer, Upload, Settings, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
 import { formatCurrency, isValidDocument } from '../utils';
 import { Order, Product, CompanySettings } from '../types';
+import { format } from 'date-fns';
 
 interface QuoteItem {
   id: string;
@@ -144,92 +145,89 @@ export function QuoteGenerator({ onCreateOrder, products = [], onPreview, onBack
   };
 
   const getPrintView = () => (
-    <div className="bg-white w-full text-gray-900">
+    <div className="bg-white w-full text-gray-900 font-sans print:text-sm">
       {/* Header */}
-      <div className="flex justify-between items-start border-b-2 border-gray-200 pb-8 mb-8">
-        <div className="max-w-[50%]">
-          {company.logo ? (
-            <img src={company.logo} alt="Logo" className="max-h-24 object-contain" />
-          ) : (
-            <div className="h-24 w-48 bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-400 font-medium rounded-lg">
-              Sua Logo Aqui
-            </div>
+      <div className="flex items-start justify-between border-b-2 border-gray-800 pb-6 mb-6">
+        <div className="flex items-center gap-4 max-w-[60%]">
+          {company?.logo && (
+            <img src={company.logo} alt="Logo" className="h-20 w-auto object-contain" />
           )}
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 uppercase tracking-tight">{company?.name || 'Sua Empresa'}</h2>
+            <div className="text-sm text-gray-600 mt-1 space-y-0.5">
+              {company?.document && <p>CNPJ/CPF: {company.document}</p>}
+              {company?.phone && <p>Tel: {company.phone}</p>}
+              {company?.email && <p>E-mail: {company.email}</p>}
+            </div>
+          </div>
         </div>
         <div className="text-right">
-          <h1 className="text-2xl font-bold text-gray-900">{company.name}</h1>
-          {company.document && <p className="text-gray-600 mt-1">CNPJ/CPF: {company.document}</p>}
-          {company.phone && <p className="text-gray-600">{company.phone}</p>}
-          {company.email && <p className="text-gray-600">{company.email}</p>}
+          <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tight">Orçamento</h1>
+          {quoteNumber && <p className="text-gray-500 mt-1 font-medium">Nº {quoteNumber}</p>}
+          <p className="text-sm text-gray-500 mt-2">Data: {format(new Date(), 'dd/MM/yyyy')}</p>
         </div>
       </div>
 
-      {/* Info */}
-      <div className="mb-8">
-        <div className="flex justify-between items-end mb-6">
-          <h2 className="text-3xl font-light text-gray-800">ORÇAMENTO</h2>
-          {quoteNumber && <p className="text-lg font-medium text-gray-600">Nº {quoteNumber}</p>}
+      {/* Client Info */}
+      <div className="grid grid-cols-2 gap-6 mb-8">
+        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Dados do Cliente</p>
+          <p className="text-base font-bold text-gray-900">{clientName || 'Cliente não informado'}</p>
+          {clientDocument && <p className="text-sm text-gray-600 mt-1">CPF/CNPJ: {clientDocument}</p>}
+          {clientPhone && <p className="text-sm text-gray-600 mt-1">Tel: {clientPhone}</p>}
+          {theme && <p className="text-sm text-gray-600 mt-1">Tema/Empresa: {theme}</p>}
         </div>
-        <div className="grid grid-cols-2 gap-8">
-          <div>
-            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1">Cliente</p>
-            <p className="text-lg font-medium text-gray-900">{clientName || 'Cliente não informado'}</p>
-            {clientDocument && <p className="text-gray-600 mt-1">CPF/CNPJ: {clientDocument}</p>}
-            {clientPhone && <p className="text-gray-600 mt-1">Tel: {clientPhone}</p>}
-            {theme && <p className="text-gray-600 mt-1">Tema/Empresa: {theme}</p>}
-          </div>
-          <div className="text-right">
-            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1">Endereço de Entrega</p>
-            <p className="text-gray-900">{address}{addressNumber ? `, ${addressNumber}` : ''}</p>
-            <p className="text-gray-900">{neighborhood}</p>
-            <p className="text-gray-900">{city}{state ? ` - ${state}` : ''}</p>
-            <p className="text-gray-900">{zipCode}</p>
-          </div>
+        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Endereço de Entrega</p>
+          <p className="text-sm text-gray-900">{address}{addressNumber ? `, ${addressNumber}` : ''}</p>
+          <p className="text-sm text-gray-900">{neighborhood}</p>
+          <p className="text-sm text-gray-900">{city}{state ? ` - ${state}` : ''}</p>
+          <p className="text-sm text-gray-900">{zipCode}</p>
         </div>
       </div>
 
       {/* Table */}
       <table className="w-full mb-8 text-left border-collapse">
         <thead>
-          <tr className="border-b-2 border-gray-200">
-            <th className="py-3 font-bold text-gray-700">Descrição</th>
-            <th className="py-3 font-bold text-gray-700 text-center">Qtd</th>
-            <th className="py-3 font-bold text-gray-700 text-right">V. Unitário</th>
-            <th className="py-3 font-bold text-gray-700 text-right">Total</th>
+          <tr className="border-b-2 border-gray-800">
+            <th className="py-3 px-2 font-bold text-gray-900 uppercase tracking-wider text-xs">Descrição</th>
+            <th className="py-3 px-2 font-bold text-gray-900 uppercase tracking-wider text-xs text-center w-20">Qtd</th>
+            <th className="py-3 px-2 font-bold text-gray-900 uppercase tracking-wider text-xs text-right w-32">V. Unitário</th>
+            <th className="py-3 px-2 font-bold text-gray-900 uppercase tracking-wider text-xs text-right w-32">Total</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-gray-200">
           {items.map((item, idx) => (
-            <tr key={idx}>
-              <td className="py-4 text-gray-800 break-words max-w-[8cm]">{item.description || '-'}</td>
-              <td className="py-4 text-gray-800 text-center">{item.quantity}</td>
-              <td className="py-4 text-gray-800 text-right">{formatCurrency(item.unitPrice)}</td>
-              <td className="py-4 text-gray-800 text-right font-medium">{formatCurrency(item.quantity * item.unitPrice)}</td>
+            <tr key={idx} className="break-inside-avoid">
+              <td className="py-3 px-2 text-gray-800 break-words">{item.description || '-'}</td>
+              <td className="py-3 px-2 text-gray-800 text-center">{item.quantity}</td>
+              <td className="py-3 px-2 text-gray-800 text-right">{formatCurrency(item.unitPrice)}</td>
+              <td className="py-3 px-2 text-gray-900 text-right font-bold">{formatCurrency(item.quantity * item.unitPrice)}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
       {/* Totals */}
-      <div className="flex justify-end mb-8">
-        <div className="w-64 space-y-3">
-          <div className="flex justify-between text-gray-600">
+      <div className="flex justify-end mb-8 break-inside-avoid">
+        <div className="w-72 bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-2">
+          <div className="flex justify-between text-sm text-gray-600">
             <span>Subtotal</span>
             <span>{formatCurrency(subtotal)}</span>
           </div>
           {discount > 0 && (
-            <div className="flex justify-between text-red-600">
+            <div className="flex justify-between text-sm text-red-600">
               <span>Desconto</span>
               <span>-{formatCurrency(discount)}</span>
             </div>
           )}
           {shipping > 0 && (
-            <div className="flex justify-between text-gray-600">
+            <div className="flex justify-between text-sm text-gray-600">
               <span>Frete</span>
               <span>{formatCurrency(shipping)}</span>
             </div>
           )}
-          <div className="flex justify-between text-lg font-bold text-gray-900 pt-3 border-t-2 border-gray-200">
+          <div className="flex justify-between text-lg font-black text-gray-900 pt-2 border-t border-gray-300 mt-2">
             <span>Total</span>
             <span>{formatCurrency(total)}</span>
           </div>
@@ -238,16 +236,18 @@ export function QuoteGenerator({ onCreateOrder, products = [], onPreview, onBack
 
       {/* Notes */}
       {notes && (
-        <div className="mb-8">
-          <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Observações</p>
-          <p className="text-gray-700 whitespace-pre-wrap break-words">{notes}</p>
+        <div className="mb-8 break-inside-avoid">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 border-b border-gray-200 pb-2">Observações</p>
+          <div className="py-2">
+            <p className="text-sm text-gray-700 whitespace-pre-wrap break-words leading-relaxed">{notes}</p>
+          </div>
         </div>
       )}
 
       {/* Footer */}
-      <div className="mt-16 pt-8 border-t border-gray-200 text-center text-gray-500 text-sm">
+      <div className="mt-12 pt-6 border-t border-gray-200 text-center text-gray-500 text-xs uppercase tracking-wider break-inside-avoid">
         <p>Orçamento válido por 15 dias.</p>
-        <p className="mt-1">Agradecemos a preferência!</p>
+        <p className="mt-1 font-bold">Agradecemos a preferência!</p>
       </div>
     </div>
   );
