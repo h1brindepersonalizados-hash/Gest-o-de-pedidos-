@@ -7,6 +7,14 @@ export interface Product {
   price: number;
 }
 
+export interface CompanySettings {
+  name: string;
+  document: string;
+  phone: string;
+  email: string;
+  logo: string;
+}
+
 export interface Order {
   id: string;
   clientName: string;

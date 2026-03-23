@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, FileText, CheckCircle, Printer, Upload, Settings, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
 import { formatCurrency, isValidDocument } from '../utils';
-import { Order, Product } from '../types';
+import { Order, Product, CompanySettings } from '../types';
 
 interface QuoteItem {
   id: string;
@@ -35,8 +35,7 @@ export function QuoteGenerator({ onCreateOrder, products = [], onPreview, onBack
   const [shipping, setShipping] = useState<number>(0);
   const [notes, setNotes] = useState('');
   
-  const [showSettings, setShowSettings] = useState(false);
-  const [company, setCompany] = useState({
+  const [company, setCompany] = useState<CompanySettings>({
     name: 'H1 Brindes Personalizados',
     document: '',
     phone: '',
@@ -48,21 +47,17 @@ export function QuoteGenerator({ onCreateOrder, products = [], onPreview, onBack
     const lastQuote = localStorage.getItem('lastQuoteNumber');
     const nextQuote = lastQuote ? parseInt(lastQuote, 10) + 1 : 1;
     setQuoteNumber(nextQuote.toString().padStart(2, '0'));
+
+    const savedSettings = localStorage.getItem('companySettings');
+    if (savedSettings) {
+      setCompany(JSON.parse(savedSettings));
+    }
   }, []);
 
   const saveQuoteNumber = () => {
     const current = parseInt(quoteNumber, 10);
     if (!isNaN(current)) {
       localStorage.setItem('lastQuoteNumber', current.toString());
-    }
-  };
-
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setCompany({ ...company, logo: reader.result as string });
-      reader.readAsDataURL(file);
     }
   };
 
@@ -277,89 +272,7 @@ export function QuoteGenerator({ onCreateOrder, products = [], onPreview, onBack
                 <p className="text-sm text-gray-500">Crie orçamentos detalhados e converta-os em pedidos rapidamente.</p>
               </div>
             </div>
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-sky-500 transition-colors bg-gray-50 px-4 py-2 rounded-lg border border-gray-200"
-            >
-              <Settings className="h-4 w-4" />
-              Configurar Cabeçalho
-              {showSettings ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </button>
           </div>
-
-          {/* Configurações da Empresa */}
-          {showSettings && (
-            <div className="mb-8 bg-sky-50/50 p-6 rounded-xl border border-sky-100 space-y-4">
-              <h3 className="text-sm font-semibold text-pink-600 uppercase tracking-wider">Dados da Sua Empresa (Para o PDF/Impressão)</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Empresa</label>
-                  <input
-                    type="text"
-                    value={company.name}
-                    onChange={(e) => setCompany({ ...company, name: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 bg-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">CNPJ / CPF</label>
-                  <input
-                    type="text"
-                    value={company.document}
-                    onChange={(e) => setCompany({ ...company, document: e.target.value })}
-                    placeholder="00.000.000/0001-00"
-                    className={`w-full rounded-lg border px-4 py-2 outline-none focus:ring-1 bg-white ${
-                      company.document.replace(/\D/g, '').length > 0 && !isValidDocument(company.document)
-                        ? 'border-red-300 focus:border-red-400 focus:ring-red-400'
-                        : 'border-gray-300 focus:border-sky-400 focus:ring-sky-400'
-                    }`}
-                  />
-                  {company.document.replace(/\D/g, '').length > 0 && !isValidDocument(company.document) && (
-                    <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" /> CPF ou CNPJ inválido
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Telefone / WhatsApp</label>
-                  <input
-                    type="text"
-                    value={company.phone}
-                    onChange={(e) => setCompany({ ...company, phone: e.target.value })}
-                    placeholder="(00) 00000-0000"
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 bg-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
-                  <input
-                    type="email"
-                    value={company.email}
-                    onChange={(e) => setCompany({ ...company, email: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 bg-white"
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Logotipo</label>
-                  <div className="flex items-center gap-4">
-                    {company.logo && (
-                      <img src={company.logo} alt="Logo" className="h-12 w-12 object-contain rounded border border-gray-200 bg-white" />
-                    )}
-                    <label className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 text-sm font-medium text-gray-700 transition-colors">
-                      <Upload className="h-4 w-4" />
-                      {company.logo ? 'Trocar Logo' : 'Fazer Upload da Logo'}
-                      <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
-                    </label>
-                    {company.logo && (
-                      <button onClick={() => setCompany({ ...company, logo: '' })} className="text-sm text-red-600 hover:text-red-800">
-                        Remover
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           <div className="space-y-6">
             {/* Client Info */}

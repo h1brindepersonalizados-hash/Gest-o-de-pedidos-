@@ -9,12 +9,13 @@ import { OrderList } from './components/OrderList';
 import { QuoteGenerator } from './components/QuoteGenerator';
 import { ProductList } from './components/ProductList';
 import { Reports } from './components/Reports';
+import { SettingsView } from './components/SettingsView';
 import { OrderPrintView } from './components/OrderPrintView';
 import { Order } from './types';
 import { addMonths, subMonths, format, parseISO, isBefore, startOfDay, isSameDay } from 'date-fns';
-import { Plus, Search, Package2, LayoutDashboard, AlertTriangle, Clock, CalendarDays, Menu, X, Calculator, Send, Download, Package, FileSpreadsheet } from 'lucide-react';
+import { Plus, Search, Package2, LayoutDashboard, AlertTriangle, Clock, CalendarDays, Menu, X, Calculator, Send, Download, Package, FileSpreadsheet, Settings } from 'lucide-react';
 
-type ViewMode = 'dashboard' | 'today' | 'production' | 'delayed' | 'search' | 'quote-generator' | 'sent' | 'products' | 'reports';
+type ViewMode = 'dashboard' | 'today' | 'production' | 'delayed' | 'search' | 'quote-generator' | 'sent' | 'products' | 'reports' | 'settings';
 
 export default function App() {
   const { orders, addOrder, updateOrder, deleteOrder } = useOrders();
@@ -208,6 +209,7 @@ export default function App() {
             <NavItem icon={Calculator} label="Gerador de Orçamento" mode="quote-generator" />
             <NavItem icon={Package} label="Produtos" mode="products" />
             <NavItem icon={FileSpreadsheet} label="Relatórios" mode="reports" />
+            <NavItem icon={Settings} label="Configurações" mode="settings" />
             <NavItem icon={CalendarDays} label="Entregar Hoje" mode="today" count={todayOrders.length} />
             <NavItem icon={Clock} label="Em Produção" mode="production" count={productionOrders.length} />
             <NavItem icon={Send} label="Enviados" mode="sent" count={sentOrders.length} />
@@ -252,6 +254,7 @@ export default function App() {
                viewMode === 'quote-generator' ? 'Gerador de Orçamento' :
                viewMode === 'products' ? 'Produtos' :
                viewMode === 'reports' ? 'Relatórios' :
+               viewMode === 'settings' ? 'Configurações' :
                viewMode === 'today' ? 'Entregar Hoje' : 
                viewMode === 'production' ? 'Em Produção' : 
                viewMode === 'sent' ? 'Pedidos Enviados' :
@@ -299,6 +302,8 @@ export default function App() {
               />
             ) : viewMode === 'reports' ? (
               <Reports orders={orders} />
+            ) : viewMode === 'settings' ? (
+              <SettingsView />
             ) : viewMode === 'today' ? (
               <OrderList 
                 orders={todayOrders} 

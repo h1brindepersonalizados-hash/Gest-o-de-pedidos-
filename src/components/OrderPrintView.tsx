@@ -1,11 +1,40 @@
-import React from 'react';
-import { Order } from '../types';
+import React, { useEffect, useState } from 'react';
+import { Order, CompanySettings } from '../types';
 import { format, parseISO } from 'date-fns';
 import { formatCurrency } from '../utils';
 
 export function OrderPrintView({ order }: { order: Order }) {
+  const [company, setCompany] = useState<CompanySettings | null>(null);
+
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('companySettings');
+    if (savedSettings) {
+      setCompany(JSON.parse(savedSettings));
+    }
+  }, []);
+
   return (
     <div className="text-gray-900">
+      {/* Company Header */}
+      {company && (
+        <div className="flex items-center justify-between border-b-2 border-gray-200 pb-6 mb-6">
+          <div className="flex items-center gap-4">
+            {company.logo && (
+              <img src={company.logo} alt="Logo" className="h-16 w-auto object-contain" />
+            )}
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">{company.name}</h2>
+              <div className="text-sm text-gray-500 mt-1">
+                {company.document && <span>{company.document}</span>}
+                {company.document && company.phone && <span className="mx-2">•</span>}
+                {company.phone && <span>{company.phone}</span>}
+              </div>
+              {company.email && <div className="text-sm text-gray-500">{company.email}</div>}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="border-b-2 border-gray-200 pb-6 mb-6 flex justify-between items-end">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Ficha de Produção</h1>
