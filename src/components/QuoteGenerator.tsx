@@ -35,6 +35,7 @@ export function QuoteGenerator({ onCreateOrder, products = [], onPreview, onBack
   const [discount, setDiscount] = useState<number>(0);
   const [shipping, setShipping] = useState<number>(0);
   const [notes, setNotes] = useState('');
+  const [artwork, setArtwork] = useState<{ name: string; data: string } | null>(null);
   
   const [company, setCompany] = useState<CompanySettings>({
     name: 'H1 Brindes Personalizados',
@@ -140,8 +141,27 @@ export function QuoteGenerator({ onCreateOrder, products = [], onPreview, onBack
       product: productDescription,
       value: total,
       notes: generatedNotes,
-      status: 'pendente'
+      status: 'pendente',
+      artwork: artwork || undefined
     });
+  };
+
+  const handleArtworkUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        alert('A imagem deve ter no máximo 10MB');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setArtwork({
+          name: file.name,
+          data: reader.result as string
+        });
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const getPrintView = () => (
@@ -241,6 +261,14 @@ export function QuoteGenerator({ onCreateOrder, products = [], onPreview, onBack
           <div className="py-2">
             <p className="text-sm text-gray-700 whitespace-pre-wrap break-words leading-relaxed">{notes}</p>
           </div>
+        </div>
+      )}
+
+      {/* Artwork */}
+      {artwork && (
+        <div className="mt-8 break-inside-avoid">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 border-b border-gray-200 pb-2">Arte / Referência</p>
+          <img src={artwork.data} alt="Arte" className="max-w-full max-h-[8cm] rounded-lg border border-gray-200 object-contain mt-4" />
         </div>
       )}
 
@@ -498,15 +526,50 @@ export function QuoteGenerator({ onCreateOrder, products = [], onPreview, onBack
 
             {/* Totals & Notes */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-gray-100">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Observações do Orçamento</label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={6}
-                  placeholder="Condições de pagamento, prazos específicos, etc."
-                  className="w-full resize-none rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
-                />
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Observações do Orçamento</label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={4}
+                    placeholder="Condições de pagamento, prazos específicos, etc."
+                    className="w-full resize-none rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Arte / Referência
+                  </label>
+                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:border-sky-400 transition-colors bg-gray-50">
+                    <div className="space-y-1 text-center">
+                      {artwork ? (
+                        <div className="flex flex-col items-center">
+                          <img src={artwork.data} alt="Preview" className="h-32 object-contain mb-4 rounded-lg shadow-sm" />
+                          <div className="flex text-sm text-gray-600">
+                            <label className="relative cursor-pointer rounded-md bg-white font-medium text-sky-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-sky-500 focus-within:ring-offset-2 hover:text-sky-500">
+                              <span>Trocar imagem</span>
+                              <input type="file" className="sr-only" accept="image/*" onChange={handleArtworkUpload} />
+                            </label>
+                            <p className="pl-1">ou arraste e solte</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                          <div className="flex text-sm text-gray-600 mt-4">
+                            <label className="relative cursor-pointer rounded-md bg-white font-medium text-sky-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-sky-500 focus-within:ring-offset-2 hover:text-sky-500">
+                              <span>Fazer upload de um arquivo</span>
+                              <input type="file" className="sr-only" accept="image/*" onChange={handleArtworkUpload} />
+                            </label>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-2">PNG, JPG, GIF até 10MB</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
               
               <div className="bg-gray-50 rounded-xl p-6 border border-gray-100 space-y-4">

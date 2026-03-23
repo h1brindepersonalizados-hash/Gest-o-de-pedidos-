@@ -53,12 +53,14 @@ export function OrderPrintView({ order }: { order: Order }) {
       </div>
 
       {/* Products */}
-      <div className="mb-6">
-        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 border-b border-gray-200 pb-2">Produtos / Descrição</p>
-        <div className="py-2">
-          <p className="text-base whitespace-pre-wrap break-words text-gray-800 leading-relaxed">{order.product}</p>
+      {!order.notes?.includes('--- ORÇAMENTO APROVADO ---') && (
+        <div className="mb-6">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 border-b border-gray-200 pb-2">Produtos / Descrição</p>
+          <div className="py-2">
+            <p className="text-base whitespace-pre-wrap break-words text-gray-800 leading-relaxed">{order.product}</p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Value */}
       <div className="mb-6 flex justify-end">
