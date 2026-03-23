@@ -201,7 +201,7 @@ export function QuoteGenerator({ onCreateOrder, products = [], onPreview, onBack
         <tbody className="divide-y divide-gray-100">
           {items.map((item, idx) => (
             <tr key={idx}>
-              <td className="py-4 text-gray-800">{item.description || '-'}</td>
+              <td className="py-4 text-gray-800 break-words max-w-[8cm]">{item.description || '-'}</td>
               <td className="py-4 text-gray-800 text-center">{item.quantity}</td>
               <td className="py-4 text-gray-800 text-right">{formatCurrency(item.unitPrice)}</td>
               <td className="py-4 text-gray-800 text-right font-medium">{formatCurrency(item.quantity * item.unitPrice)}</td>
@@ -240,7 +240,7 @@ export function QuoteGenerator({ onCreateOrder, products = [], onPreview, onBack
       {notes && (
         <div className="mb-8">
           <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Observações</p>
-          <p className="text-gray-700 whitespace-pre-wrap">{notes}</p>
+          <p className="text-gray-700 whitespace-pre-wrap break-words">{notes}</p>
         </div>
       )}
 

@@ -3,7 +3,7 @@
 @media print {
   @page {
     size: A4;
-    margin: 2cm;
+    margin: 2.35cm 1.5cm; /* 21cm - 3cm = 18cm width, 29.7cm - 4.7cm = 25cm height */
   }
   
   body {

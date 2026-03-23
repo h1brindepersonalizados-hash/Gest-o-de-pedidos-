@@ -60,7 +60,7 @@ export function OrderPrintView({ order }: { order: Order }) {
       <div className="mb-8">
         <p className="text-sm font-bold text-gray-500 uppercase mb-2">Produtos / Descrição</p>
         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <p className="text-lg whitespace-pre-wrap">{order.product}</p>
+          <p className="text-lg whitespace-pre-wrap break-words">{order.product}</p>
         </div>
       </div>
 
@@ -75,7 +75,7 @@ export function OrderPrintView({ order }: { order: Order }) {
         <div className="mb-8">
           <p className="text-sm font-bold text-gray-500 uppercase mb-2">Observações</p>
           <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-            <pre className="whitespace-pre-wrap font-sans text-gray-800">{order.notes}</pre>
+            <pre className="whitespace-pre-wrap font-sans text-gray-800 break-words">{order.notes}</pre>
           </div>
         </div>
       )}

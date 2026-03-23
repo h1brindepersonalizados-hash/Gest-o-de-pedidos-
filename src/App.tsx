@@ -411,7 +411,9 @@ export default function App() {
                   </button>
                 </div>
               </div>
-              {printViewContent}
+              <div className="print:w-[18cm] print:mx-auto">
+                {printViewContent}
+              </div>
             </div>
           </div>
         </div>
