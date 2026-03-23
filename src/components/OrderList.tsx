@@ -3,16 +3,17 @@ import { Order } from '../types';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrency } from '../utils';
-import { Edit2, Trash2, Paperclip, Package, Image as ImageIcon } from 'lucide-react';
+import { Edit2, Trash2, Paperclip, Package, Image as ImageIcon, Printer } from 'lucide-react';
 
 interface OrderListProps {
   orders: Order[];
   onEdit: (order: Order) => void;
   onDelete: (id: string) => void;
+  onPrint?: (order: Order) => void;
   emptyMessage?: string;
 }
 
-export function OrderList({ orders, onEdit, onDelete, emptyMessage = "Nenhum pedido encontrado." }: OrderListProps) {
+export function OrderList({ orders, onEdit, onDelete, onPrint, emptyMessage = "Nenhum pedido encontrado." }: OrderListProps) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const getStatusColor = (status: Order['status']) => {
@@ -98,16 +99,20 @@ export function OrderList({ orders, onEdit, onDelete, emptyMessage = "Nenhum ped
                 </td>
                 <td className="px-6 py-4">
                   {order.artwork ? (
-                    <a
-                      href={order.artwork.data}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-sky-500 hover:text-sky-600"
-                      title={order.artwork.name}
-                    >
-                      <ImageIcon className="h-4 w-4" />
-                      <span className="truncate max-w-[100px]">{order.artwork.name}</span>
-                    </a>
+                    <div className="flex items-center">
+                      <img 
+                        src={order.artwork.data} 
+                        alt={order.artwork.name} 
+                        className="h-12 w-12 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => {
+                          const win = window.open();
+                          if (win) {
+                            win.document.write(`<iframe src="${order.artwork!.data}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
+                          }
+                        }}
+                        title="Clique para ampliar"
+                      />
+                    </div>
                   ) : (
                     <span className="text-gray-400">-</span>
                   )}
@@ -135,10 +140,15 @@ export function OrderList({ orders, onEdit, onDelete, emptyMessage = "Nenhum ped
                     </div>
                   ) : (
                     <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => onEdit(order)} className="p-1.5 text-gray-400 hover:text-sky-500 transition-colors">
+                      {onPrint && (
+                        <button onClick={() => onPrint(order)} className="p-1.5 text-gray-400 hover:text-emerald-600 transition-colors" title="Imprimir Ficha">
+                          <Printer className="h-4 w-4" />
+                        </button>
+                      )}
+                      <button onClick={() => onEdit(order)} className="p-1.5 text-gray-400 hover:text-sky-500 transition-colors" title="Editar">
                         <Edit2 className="h-4 w-4" />
                       </button>
-                      <button onClick={() => setConfirmDeleteId(order.id)} className="p-1.5 text-gray-400 hover:text-red-600 transition-colors">
+                      <button onClick={() => setConfirmDeleteId(order.id)} className="p-1.5 text-gray-400 hover:text-red-600 transition-colors" title="Excluir">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>

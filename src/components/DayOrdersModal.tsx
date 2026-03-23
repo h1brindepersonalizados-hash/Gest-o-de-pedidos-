@@ -1,6 +1,6 @@
 import React from 'react';
 import { Order } from '../types';
-import { X, Edit2, Trash2, Package, Paperclip, Image as ImageIcon } from 'lucide-react';
+import { X, Edit2, Trash2, Package, Paperclip, Image as ImageIcon, Printer } from 'lucide-react';
 import { formatCurrency } from '../utils';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -13,6 +13,7 @@ interface DayOrdersModalProps {
   onEdit: (order: Order) => void;
   onDelete: (id: string) => void;
   onAddOrder: (date: string) => void;
+  onPrint?: (order: Order) => void;
 }
 
 export function DayOrdersModal({
@@ -23,6 +24,7 @@ export function DayOrdersModal({
   onEdit,
   onDelete,
   onAddOrder,
+  onPrint,
 }: DayOrdersModalProps) {
   const [confirmDeleteId, setConfirmDeleteId] = React.useState<string | null>(null);
 
@@ -99,6 +101,15 @@ export function DayOrdersModal({
                       </div>
                     </div>
                     <div className="flex gap-2">
+                      {onPrint && (
+                        <button
+                          onClick={() => onPrint(order)}
+                          className="rounded p-1.5 text-gray-500 hover:bg-white hover:text-sky-500"
+                          title="Imprimir Ficha"
+                        >
+                          <Printer className="h-4 w-4" />
+                        </button>
+                      )}
                       <button
                         onClick={() => onEdit(order)}
                         className="rounded p-1.5 text-gray-500 hover:bg-white hover:text-sky-500"
@@ -174,15 +185,21 @@ export function DayOrdersModal({
                         </a>
                       )}
                       {order.artwork && (
-                        <a
-                          href={order.artwork.data}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition-colors"
-                        >
-                          <ImageIcon className="h-4 w-4" />
-                          Ver Arte ({order.artwork.name})
-                        </a>
+                        <div className="mt-2 w-full">
+                          <p className="text-sm font-medium text-gray-700 mb-1">Arte do Cliente:</p>
+                          <img 
+                            src={order.artwork.data} 
+                            alt={order.artwork.name} 
+                            className="max-h-48 rounded-lg border border-gray-200 object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => {
+                              const win = window.open();
+                              if (win) {
+                                win.document.write(`<iframe src="${order.artwork!.data}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
+                              }
+                            }}
+                            title="Clique para ampliar"
+                          />
+                        </div>
                       )}
                     </div>
                   )}

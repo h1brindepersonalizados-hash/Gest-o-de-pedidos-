@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, FileText, CheckCircle, Printer, Upload, Settings, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
 import { formatCurrency, isValidDocument } from '../utils';
 import { Order, Product } from '../types';
@@ -13,9 +13,10 @@ interface QuoteItem {
 interface QuoteGeneratorProps {
   onCreateOrder: (prefilledData: Partial<Order>) => void;
   products?: Product[];
+  onPreview: (content: React.ReactNode) => void;
 }
 
-export function QuoteGenerator({ onCreateOrder, products = [] }: QuoteGeneratorProps) {
+export function QuoteGenerator({ onCreateOrder, products = [], onPreview }: QuoteGeneratorProps) {
   const [quoteNumber, setQuoteNumber] = useState('');
   const [clientName, setClientName] = useState('');
   const [clientDocument, setClientDocument] = useState('');
@@ -42,6 +43,19 @@ export function QuoteGenerator({ onCreateOrder, products = [] }: QuoteGeneratorP
     email: 'h1brindepersonalizados@gmail.com',
     logo: ''
   });
+
+  useEffect(() => {
+    const lastQuote = localStorage.getItem('lastQuoteNumber');
+    const nextQuote = lastQuote ? parseInt(lastQuote, 10) + 1 : 1;
+    setQuoteNumber(nextQuote.toString().padStart(2, '0'));
+  }, []);
+
+  const saveQuoteNumber = () => {
+    const current = parseInt(quoteNumber, 10);
+    if (!isNaN(current)) {
+      localStorage.setItem('lastQuoteNumber', current.toString());
+    }
+  };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -124,6 +138,8 @@ export function QuoteGenerator({ onCreateOrder, products = [] }: QuoteGeneratorP
     if (downPayment > 0) generatedNotes += `Entrada Sugerida: ${formatCurrency(downPayment)}\n`;
     if (notes) generatedNotes += `\nObservações: ${notes}`;
 
+    saveQuoteNumber();
+    
     onCreateOrder({
       clientName,
       product: productDescription,
@@ -134,8 +150,124 @@ export function QuoteGenerator({ onCreateOrder, products = [] }: QuoteGeneratorP
     });
   };
 
+  const getPrintView = () => (
+    <div className="bg-white w-full text-gray-900">
+      {/* Header */}
+      <div className="flex justify-between items-start border-b-2 border-gray-200 pb-8 mb-8">
+        <div className="max-w-[50%]">
+          {company.logo ? (
+            <img src={company.logo} alt="Logo" className="max-h-24 object-contain" />
+          ) : (
+            <div className="h-24 w-48 bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-400 font-medium rounded-lg">
+              Sua Logo Aqui
+            </div>
+          )}
+        </div>
+        <div className="text-right">
+          <h1 className="text-2xl font-bold text-gray-900">{company.name}</h1>
+          {company.document && <p className="text-gray-600 mt-1">CNPJ/CPF: {company.document}</p>}
+          {company.phone && <p className="text-gray-600">{company.phone}</p>}
+          {company.email && <p className="text-gray-600">{company.email}</p>}
+        </div>
+      </div>
+
+      {/* Info */}
+      <div className="mb-8">
+        <div className="flex justify-between items-end mb-6">
+          <h2 className="text-3xl font-light text-gray-800">ORÇAMENTO</h2>
+          {quoteNumber && <p className="text-lg font-medium text-gray-600">Nº {quoteNumber}</p>}
+        </div>
+        <div className="grid grid-cols-2 gap-8">
+          <div>
+            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1">Cliente</p>
+            <p className="text-lg font-medium text-gray-900">{clientName || 'Cliente não informado'}</p>
+            {clientDocument && <p className="text-gray-600 mt-1">CPF/CNPJ: {clientDocument}</p>}
+            {clientPhone && <p className="text-gray-600 mt-1">Tel: {clientPhone}</p>}
+            {theme && <p className="text-gray-600 mt-1">Tema/Empresa: {theme}</p>}
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1">Endereço de Entrega</p>
+            <p className="text-gray-900">{address}{addressNumber ? `, ${addressNumber}` : ''}</p>
+            <p className="text-gray-900">{neighborhood}</p>
+            <p className="text-gray-900">{city}{state ? ` - ${state}` : ''}</p>
+            <p className="text-gray-900">{zipCode}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Table */}
+      <table className="w-full mb-8 text-left border-collapse">
+        <thead>
+          <tr className="border-b-2 border-gray-200">
+            <th className="py-3 font-bold text-gray-700">Descrição</th>
+            <th className="py-3 font-bold text-gray-700 text-center">Qtd</th>
+            <th className="py-3 font-bold text-gray-700 text-right">V. Unitário</th>
+            <th className="py-3 font-bold text-gray-700 text-right">Total</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {items.map((item, idx) => (
+            <tr key={idx}>
+              <td className="py-4 text-gray-800">{item.description || '-'}</td>
+              <td className="py-4 text-gray-800 text-center">{item.quantity}</td>
+              <td className="py-4 text-gray-800 text-right">{formatCurrency(item.unitPrice)}</td>
+              <td className="py-4 text-gray-800 text-right font-medium">{formatCurrency(item.quantity * item.unitPrice)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {/* Totals */}
+      <div className="flex justify-end mb-8">
+        <div className="w-64 space-y-3">
+          <div className="flex justify-between text-gray-600">
+            <span>Subtotal</span>
+            <span>{formatCurrency(subtotal)}</span>
+          </div>
+          {discount > 0 && (
+            <div className="flex justify-between text-red-600">
+              <span>Desconto</span>
+              <span>-{formatCurrency(discount)}</span>
+            </div>
+          )}
+          {shipping > 0 && (
+            <div className="flex justify-between text-gray-600">
+              <span>Frete</span>
+              <span>{formatCurrency(shipping)}</span>
+            </div>
+          )}
+          <div className="flex justify-between text-lg font-bold text-gray-900 pt-3 border-t-2 border-gray-200">
+            <span>Total</span>
+            <span>{formatCurrency(total)}</span>
+          </div>
+          {downPayment > 0 && (
+            <div className="flex justify-between text-sky-600 pt-2">
+              <span>Entrada Sugerida</span>
+              <span>{formatCurrency(downPayment)}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Notes */}
+      {notes && (
+        <div className="mb-8">
+          <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Observações</p>
+          <p className="text-gray-700 whitespace-pre-wrap">{notes}</p>
+        </div>
+      )}
+
+      {/* Footer */}
+      <div className="mt-16 pt-8 border-t border-gray-200 text-center text-gray-500 text-sm">
+        <p>Orçamento válido por 15 dias.</p>
+        <p className="mt-1">Agradecemos a preferência!</p>
+      </div>
+    </div>
+  );
+
   const handlePrint = () => {
-    window.print();
+    saveQuoteNumber();
+    onPreview(getPrintView());
   };
 
   return (
@@ -536,114 +668,6 @@ export function QuoteGenerator({ onCreateOrder, products = [] }: QuoteGeneratorP
             </div>
           </div>
         </div>
-      </div>
-
-      {/* --- VISUALIZAÇÃO DE IMPRESSÃO (Visível apenas na impressão) --- */}
-      <div className="hidden print:block bg-white w-full text-gray-900 p-8 max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-start border-b-2 border-gray-200 pb-8 mb-8">
-          <div className="max-w-[50%]">
-            {company.logo ? (
-              <img src={company.logo} alt="Logo" className="max-h-24 object-contain" />
-            ) : (
-              <div className="h-24 w-48 bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-400 font-medium rounded-lg">
-                Sua Logo Aqui
-              </div>
-            )}
-          </div>
-          <div className="text-right">
-            <h1 className="text-2xl font-bold text-gray-900">{company.name}</h1>
-            {company.document && <p className="text-gray-600 mt-1">CNPJ/CPF: {company.document}</p>}
-            {company.phone && <p className="text-gray-600">{company.phone}</p>}
-            {company.email && <p className="text-gray-600">{company.email}</p>}
-          </div>
-        </div>
-
-        {/* Info */}
-        <div className="mb-8">
-          <div className="flex justify-between items-end mb-6">
-            <h2 className="text-3xl font-light text-gray-800">ORÇAMENTO</h2>
-            {quoteNumber && <p className="text-lg font-medium text-gray-600">Nº {quoteNumber}</p>}
-          </div>
-          <div className="grid grid-cols-2 gap-8">
-            <div>
-              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1">Cliente</p>
-              <p className="text-lg font-medium text-gray-900">{clientName || 'Cliente não informado'}</p>
-              {clientDocument && <p className="text-gray-600 mt-1">CPF/CNPJ: {clientDocument}</p>}
-              {clientPhone && <p className="text-gray-600 mt-1">Tel: {clientPhone}</p>}
-              {theme && <p className="text-gray-600 mt-1">Tema/Empresa: {theme}</p>}
-            </div>
-            <div className="text-right">
-              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1">Endereço de Entrega</p>
-              <p className="text-gray-900">{address}{addressNumber ? `, ${addressNumber}` : ''}</p>
-              <p className="text-gray-900">{neighborhood}</p>
-              <p className="text-gray-900">{city}{state ? ` - ${state}` : ''}</p>
-              <p className="text-gray-900">{zipCode}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Table */}
-        <table className="w-full mb-8 text-left border-collapse">
-          <thead>
-            <tr className="border-b-2 border-gray-200">
-              <th className="py-3 font-bold text-gray-700">Descrição</th>
-              <th className="py-3 font-bold text-gray-700 text-center">Qtd</th>
-              <th className="py-3 font-bold text-gray-700 text-right">V. Unitário</th>
-              <th className="py-3 font-bold text-gray-700 text-right">Total</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {items.map((item, idx) => (
-              <tr key={idx}>
-                <td className="py-4 text-gray-800">{item.description || '-'}</td>
-                <td className="py-4 text-gray-800 text-center">{item.quantity}</td>
-                <td className="py-4 text-gray-800 text-right">{formatCurrency(item.unitPrice)}</td>
-                <td className="py-4 text-gray-800 text-right font-medium">{formatCurrency(item.quantity * item.unitPrice)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {/* Totals */}
-        <div className="flex justify-end mb-8">
-          <div className="w-72 space-y-3">
-            <div className="flex justify-between text-gray-600">
-              <span>Subtotal</span>
-              <span>{formatCurrency(subtotal)}</span>
-            </div>
-            {discount > 0 && (
-              <div className="flex justify-between text-gray-600">
-                <span>Desconto</span>
-                <span className="text-red-600">-{formatCurrency(discount)}</span>
-              </div>
-            )}
-            {shipping > 0 && (
-              <div className="flex justify-between text-gray-600">
-                <span>Frete</span>
-                <span>{formatCurrency(shipping)}</span>
-              </div>
-            )}
-            <div className="flex justify-between text-xl font-bold text-gray-900 pt-3 border-t-2 border-gray-200">
-              <span>Total Final</span>
-              <span>{formatCurrency(total)}</span>
-            </div>
-            {downPayment > 0 && (
-              <div className="flex justify-between text-gray-600 pt-2">
-                <span>Entrada Sugerida</span>
-                <span className="font-medium text-sky-600">{formatCurrency(downPayment)}</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Notes */}
-        {notes && (
-          <div className="mt-12 pt-8 border-t border-gray-200">
-            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Observações</p>
-            <p className="text-gray-700 whitespace-pre-wrap">{notes}</p>
-          </div>
-        )}
       </div>
     </div>
   );

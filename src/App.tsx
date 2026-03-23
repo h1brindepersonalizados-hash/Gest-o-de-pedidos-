@@ -8,11 +8,13 @@ import { DayOrdersModal } from './components/DayOrdersModal';
 import { OrderList } from './components/OrderList';
 import { QuoteGenerator } from './components/QuoteGenerator';
 import { ProductList } from './components/ProductList';
+import { Reports } from './components/Reports';
+import { OrderPrintView } from './components/OrderPrintView';
 import { Order } from './types';
 import { addMonths, subMonths, format, parseISO, isBefore, startOfDay, isSameDay } from 'date-fns';
-import { Plus, Search, Package2, LayoutDashboard, AlertTriangle, Clock, CalendarDays, Menu, X, Calculator, Send, Download, Package } from 'lucide-react';
+import { Plus, Search, Package2, LayoutDashboard, AlertTriangle, Clock, CalendarDays, Menu, X, Calculator, Send, Download, Package, FileSpreadsheet } from 'lucide-react';
 
-type ViewMode = 'dashboard' | 'today' | 'production' | 'delayed' | 'search' | 'quote-generator' | 'sent' | 'products';
+type ViewMode = 'dashboard' | 'today' | 'production' | 'delayed' | 'search' | 'quote-generator' | 'sent' | 'products' | 'reports';
 
 export default function App() {
   const { orders, addOrder, updateOrder, deleteOrder } = useOrders();
@@ -28,6 +30,11 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [printViewContent, setPrintViewContent] = useState<React.ReactNode | null>(null);
+
+  const handlePrintOrder = (order: Order) => {
+    setPrintViewContent(<OrderPrintView order={order} />);
+  };
 
   const handlePrevMonth = () => setCurrentDate(subMonths(currentDate, 1));
   const handleNextMonth = () => setCurrentDate(addMonths(currentDate, 1));
@@ -159,7 +166,7 @@ export default function App() {
   );
 
   return (
-    <div className="min-h-screen bg-sky-50 flex flex-col md:flex-row font-sans print:bg-white">
+    <div className="min-h-screen bg-sky-50 flex flex-col md:flex-row font-sans print:bg-white print:block print:h-auto print:min-h-0">
       {/* Mobile Header */}
       <div className="md:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-20 print:hidden">
         <div className="flex items-center gap-2">
@@ -200,6 +207,7 @@ export default function App() {
             <NavItem icon={LayoutDashboard} label="Visão Geral" mode="dashboard" />
             <NavItem icon={Calculator} label="Gerador de Orçamento" mode="quote-generator" />
             <NavItem icon={Package} label="Produtos" mode="products" />
+            <NavItem icon={FileSpreadsheet} label="Relatórios" mode="reports" />
             <NavItem icon={CalendarDays} label="Entregar Hoje" mode="today" count={todayOrders.length} />
             <NavItem icon={Clock} label="Em Produção" mode="production" count={productionOrders.length} />
             <NavItem icon={Send} label="Enviados" mode="sent" count={sentOrders.length} />
@@ -217,7 +225,7 @@ export default function App() {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden print:overflow-visible">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden print:overflow-visible print:block print:h-auto">
         {/* Delay Warning Banner */}
         {delayedOrders.length > 0 && (
           <div className="bg-red-600 px-4 py-3 text-white sm:px-6 lg:px-8 flex items-center justify-between shrink-0 print:hidden">
@@ -243,6 +251,7 @@ export default function App() {
               {viewMode === 'dashboard' ? 'Visão Geral' : 
                viewMode === 'quote-generator' ? 'Gerador de Orçamento' :
                viewMode === 'products' ? 'Produtos' :
+               viewMode === 'reports' ? 'Relatórios' :
                viewMode === 'today' ? 'Entregar Hoje' : 
                viewMode === 'production' ? 'Em Produção' : 
                viewMode === 'sent' ? 'Pedidos Enviados' :
@@ -264,17 +273,18 @@ export default function App() {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 print:overflow-visible print:p-0 print:bg-white">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 print:overflow-visible print:p-0 print:bg-white print:block print:h-auto">
           <div className="max-w-5xl mx-auto space-y-6 print:max-w-none print:m-0 print:space-y-0">
             {viewMode === 'search' ? (
               <OrderList 
                 orders={searchResults} 
                 onEdit={handleEditOrder} 
                 onDelete={deleteOrder}
+                onPrint={handlePrintOrder}
                 emptyMessage={`Nenhum pedido encontrado para "${searchQuery}"`}
               />
             ) : viewMode === 'quote-generator' ? (
-              <QuoteGenerator onCreateOrder={handleCreateOrderFromQuote} products={products} />
+              <QuoteGenerator onCreateOrder={handleCreateOrderFromQuote} products={products} onPreview={setPrintViewContent} />
             ) : viewMode === 'products' ? (
               <ProductList 
                 products={products}
@@ -282,11 +292,14 @@ export default function App() {
                 onUpdate={updateProduct}
                 onDelete={deleteProduct}
               />
+            ) : viewMode === 'reports' ? (
+              <Reports orders={orders} />
             ) : viewMode === 'today' ? (
               <OrderList 
                 orders={todayOrders} 
                 onEdit={handleEditOrder} 
                 onDelete={deleteOrder}
+                onPrint={handlePrintOrder}
                 emptyMessage="Nenhum pedido para entregar hoje. Bom trabalho!"
               />
             ) : viewMode === 'production' ? (
@@ -294,6 +307,7 @@ export default function App() {
                 orders={productionOrders} 
                 onEdit={handleEditOrder} 
                 onDelete={deleteOrder}
+                onPrint={handlePrintOrder}
                 emptyMessage="Nenhum pedido em produção no momento."
               />
             ) : viewMode === 'sent' ? (
@@ -311,6 +325,7 @@ export default function App() {
                   orders={sentOrders} 
                   onEdit={handleEditOrder} 
                   onDelete={deleteOrder}
+                  onPrint={handlePrintOrder}
                   emptyMessage="Nenhum pedido enviado no momento."
                 />
               </div>
@@ -319,6 +334,7 @@ export default function App() {
                 orders={delayedOrders} 
                 onEdit={handleEditOrder} 
                 onDelete={deleteOrder}
+                onPrint={handlePrintOrder}
                 emptyMessage="Nenhum pedido atrasado. Excelente!"
               />
             ) : (
@@ -356,7 +372,40 @@ export default function App() {
         onEdit={handleEditOrder}
         onDelete={deleteOrder}
         onAddOrder={handleAddOrderForDay}
+        onPrint={handlePrintOrder}
       />
+
+      {/* Print View Container */}
+      {printViewContent && (
+        <div className="fixed inset-0 z-[100] bg-white print:block">
+          <div className="h-full overflow-auto print:overflow-visible">
+            <div className="max-w-4xl mx-auto p-8 print:p-0">
+              <div className="flex items-center justify-between mb-8 print:hidden">
+                <p className="text-sm text-gray-500">
+                  Dica: Se a impressão não abrir, tente abrir o aplicativo em uma nova aba.
+                </p>
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => {
+                      window.print();
+                    }}
+                    className="rounded-lg bg-sky-500 px-4 py-2 text-white hover:bg-sky-600"
+                  >
+                    Imprimir
+                  </button>
+                  <button
+                    onClick={() => setPrintViewContent(null)}
+                    className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              </div>
+              {printViewContent}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
