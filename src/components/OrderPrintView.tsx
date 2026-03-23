@@ -35,14 +35,10 @@ export function OrderPrintView({ order }: { order: Order }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-8 mb-8">
+      <div className="grid grid-cols-1 gap-8 mb-8">
         <div>
           <p className="text-sm font-bold text-gray-500 uppercase mb-1">Valor Total</p>
           <p className="text-xl font-bold text-sky-600">{formatCurrency(order.value)}</p>
-        </div>
-        <div>
-          <p className="text-sm font-bold text-gray-500 uppercase mb-1">Entrada Recebida</p>
-          <p className="text-xl font-bold text-emerald-600">{formatCurrency(order.downPayment || 0)}</p>
         </div>
       </div>
 

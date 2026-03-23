@@ -14,9 +14,10 @@ interface QuoteGeneratorProps {
   onCreateOrder: (prefilledData: Partial<Order>) => void;
   products?: Product[];
   onPreview: (content: React.ReactNode) => void;
+  onBack?: () => void;
 }
 
-export function QuoteGenerator({ onCreateOrder, products = [], onPreview }: QuoteGeneratorProps) {
+export function QuoteGenerator({ onCreateOrder, products = [], onPreview, onBack }: QuoteGeneratorProps) {
   const [quoteNumber, setQuoteNumber] = useState('');
   const [clientName, setClientName] = useState('');
   const [clientDocument, setClientDocument] = useState('');
@@ -32,7 +33,6 @@ export function QuoteGenerator({ onCreateOrder, products = [], onPreview }: Quot
   const [items, setItems] = useState<QuoteItem[]>([{ id: '1', description: '', quantity: 1, unitPrice: 0 }]);
   const [discount, setDiscount] = useState<number>(0);
   const [shipping, setShipping] = useState<number>(0);
-  const [downPayment, setDownPayment] = useState<number>(0);
   const [notes, setNotes] = useState('');
   
   const [showSettings, setShowSettings] = useState(false);
@@ -135,7 +135,6 @@ export function QuoteGenerator({ onCreateOrder, products = [], onPreview }: Quot
     if (discount > 0) generatedNotes += `Desconto: -${formatCurrency(discount)}\n`;
     if (shipping > 0) generatedNotes += `Frete: ${formatCurrency(shipping)}\n`;
     generatedNotes += `Total Final: ${formatCurrency(total)}\n`;
-    if (downPayment > 0) generatedNotes += `Entrada Sugerida: ${formatCurrency(downPayment)}\n`;
     if (notes) generatedNotes += `\nObservações: ${notes}`;
 
     saveQuoteNumber();
@@ -144,7 +143,6 @@ export function QuoteGenerator({ onCreateOrder, products = [], onPreview }: Quot
       clientName,
       product: productDescription,
       value: total,
-      downPayment: downPayment,
       notes: generatedNotes,
       status: 'pendente'
     });
@@ -240,12 +238,6 @@ export function QuoteGenerator({ onCreateOrder, products = [], onPreview }: Quot
             <span>Total</span>
             <span>{formatCurrency(total)}</span>
           </div>
-          {downPayment > 0 && (
-            <div className="flex justify-between text-sky-600 pt-2">
-              <span>Entrada Sugerida</span>
-              <span>{formatCurrency(downPayment)}</span>
-            </div>
-          )}
         </div>
       </div>
 
@@ -631,17 +623,6 @@ export function QuoteGenerator({ onCreateOrder, products = [], onPreview }: Quot
                     className="w-24 rounded-lg border border-gray-300 px-2 py-1 text-right outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
                   />
                 </div>
-                <div className="flex justify-between items-center text-sm text-gray-600">
-                  <span>Entrada Sugerida (R$)</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={downPayment}
-                    onChange={(e) => setDownPayment(parseFloat(e.target.value) || 0)}
-                    className="w-24 rounded-lg border border-gray-300 px-2 py-1 text-right outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
-                  />
-                </div>
                 <div className="pt-3 border-t border-gray-200 flex justify-between items-center">
                   <span className="text-base font-semibold text-gray-900">Total Final</span>
                   <span className="text-xl font-bold text-sky-500">{formatCurrency(total)}</span>
@@ -651,19 +632,27 @@ export function QuoteGenerator({ onCreateOrder, products = [], onPreview }: Quot
 
             {/* Actions */}
             <div className="pt-6 flex flex-col sm:flex-row gap-3 justify-end border-t border-gray-100">
+              {onBack && (
+                <button 
+                  onClick={onBack}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-white border border-gray-300 px-6 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-50 shadow-sm mr-auto"
+                >
+                  Voltar
+                </button>
+              )}
               <button 
                 onClick={handlePrint}
                 className="flex items-center justify-center gap-2 rounded-xl bg-white border border-gray-300 px-6 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-50 shadow-sm"
               >
                 <Printer className="h-5 w-5" />
-                Visualizar / Imprimir PDF
+                Salvar Orçamento
               </button>
               <button 
                 onClick={handleGenerateOrder}
                 className="flex items-center justify-center gap-2 rounded-xl bg-sky-400 px-6 py-3 font-medium text-white transition-colors hover:bg-sky-500 shadow-sm"
               >
                 <CheckCircle className="h-5 w-5" />
-                Aprovar e Criar Pedido
+                Salvar Pedido
               </button>
             </div>
           </div>

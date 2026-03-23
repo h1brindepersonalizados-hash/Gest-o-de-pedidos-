@@ -284,7 +284,12 @@ export default function App() {
                 emptyMessage={`Nenhum pedido encontrado para "${searchQuery}"`}
               />
             ) : viewMode === 'quote-generator' ? (
-              <QuoteGenerator onCreateOrder={handleCreateOrderFromQuote} products={products} onPreview={setPrintViewContent} />
+              <QuoteGenerator 
+                onCreateOrder={handleCreateOrderFromQuote} 
+                products={products} 
+                onPreview={setPrintViewContent} 
+                onBack={() => setViewMode('dashboard')} 
+              />
             ) : viewMode === 'products' ? (
               <ProductList 
                 products={products}

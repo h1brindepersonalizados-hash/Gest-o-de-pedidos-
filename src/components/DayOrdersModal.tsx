@@ -159,11 +159,6 @@ export function DayOrdersModal({
                     <span className="rounded-full bg-gray-200 px-2.5 py-0.5 text-xs font-medium text-gray-700">
                       Total: {formatCurrency(order.value)}
                     </span>
-                    {order.downPayment ? (
-                      <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-medium text-sky-700">
-                        Entrada: {formatCurrency(order.downPayment)}
-                      </span>
-                    ) : null}
                   </div>
 
                   {order.notes && (
