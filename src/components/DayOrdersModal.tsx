@@ -60,7 +60,7 @@ export function DayOrdersModal({
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4 print:hidden">
       <div className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-gray-100 p-6">
           <div>

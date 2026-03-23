@@ -221,13 +221,13 @@ export default function App() {
       {/* Overlay for mobile sidebar */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/20 z-20 md:hidden"
+          className="fixed inset-0 bg-black/20 z-20 md:hidden print:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden print:overflow-visible print:block print:h-auto">
+      <main className={`flex-1 flex flex-col min-w-0 overflow-hidden ${printViewContent ? 'print:hidden' : 'print:overflow-visible print:block print:h-auto'}`}>
         {/* Delay Warning Banner */}
         {delayedOrders.length > 0 && (
           <div className="bg-red-600 px-4 py-3 text-white sm:px-6 lg:px-8 flex items-center justify-between shrink-0 print:hidden">
