@@ -14,7 +14,7 @@ export function OrderPrintView({ order }: { order: Order }) {
   }, []);
 
   return (
-    <div className="text-gray-900 font-sans print:text-sm print:h-[calc(100vh-4.7cm)] print:flex print:flex-col">
+    <div className="text-gray-900 font-sans print:text-sm">
       {/* Header */}
       <div className="flex items-start justify-between border-b-2 border-gray-800 pb-4 mb-4">
         <div className="flex items-center gap-4 max-w-[60%]">
@@ -53,7 +53,7 @@ export function OrderPrintView({ order }: { order: Order }) {
       </div>
 
       {/* Content wrapper for flex layout */}
-      <div className="print:flex-1 print:flex print:flex-col">
+      <div className="print:block">
         {/* Products */}
         {!order.notes?.includes('--- ORÇAMENTO APROVADO ---') && (
           <div className="mb-4">
@@ -64,33 +64,38 @@ export function OrderPrintView({ order }: { order: Order }) {
           </div>
         )}
 
-        {/* Value */}
-        <div className="mb-4 flex justify-end">
-          <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 min-w-[200px] text-right">
-            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Valor Total</p>
-            <p className="text-lg font-black text-gray-900">{formatCurrency(order.value)}</p>
+        <div className="flex flex-col sm:flex-row print:flex-row gap-6 mt-4">
+          {/* Left Column: Notes */}
+          <div className="flex-1">
+            {order.notes && (
+              <div className="mb-4">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 border-b border-gray-200 pb-1">Observações</p>
+                <div className="py-1">
+                  <pre className="whitespace-pre-wrap font-sans text-xs text-gray-700 break-words leading-relaxed">{order.notes}</pre>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right Column: Value & Artwork */}
+          <div className="w-full sm:w-48 print:w-48 shrink-0 flex flex-col gap-4">
+            {/* Value */}
+            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-right">
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Valor Total</p>
+              <p className="text-base font-bold text-gray-900">{formatCurrency(order.value)}</p>
+            </div>
+
+            {/* Artwork */}
+            {order.artwork && (
+              <div style={{ pageBreakInside: 'avoid' }}>
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 border-b border-gray-200 pb-1 text-right">Arte Anexada</p>
+                <div className="flex justify-end">
+                  <img src={order.artwork.data} alt="Arte" className="print:max-h-[4cm] print:max-w-[3cm] max-h-[150px] rounded border border-gray-200 object-contain" />
+                </div>
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Notes */}
-        {order.notes && (
-          <div className="mb-4">
-            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 border-b border-gray-200 pb-1">Observações</p>
-            <div className="py-1">
-              <pre className="whitespace-pre-wrap font-sans text-xs text-gray-700 break-words leading-relaxed">{order.notes}</pre>
-            </div>
-          </div>
-        )}
-
-        {/* Artwork */}
-        {order.artwork && (
-          <div className="mt-auto pt-4" style={{ pageBreakInside: 'avoid' }}>
-            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 border-b border-gray-200 pb-1">Arte Anexada</p>
-            <div className="flex justify-center">
-              <img src={order.artwork.data} alt="Arte" className="max-w-full print:max-h-[12cm] max-h-[400px] rounded-lg border border-gray-200 object-contain" />
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
