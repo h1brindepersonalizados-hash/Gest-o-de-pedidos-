@@ -4,6 +4,7 @@ import { X, Edit2, Trash2, Package, Paperclip, Image as ImageIcon, Printer } fro
 import { formatCurrency } from '../utils';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useValueVisibility } from '../contexts/ValueVisibilityContext';
 
 interface DayOrdersModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export function DayOrdersModal({
   onPrint,
 }: DayOrdersModalProps) {
   const [confirmDeleteId, setConfirmDeleteId] = React.useState<string | null>(null);
+  const { isVisible } = useValueVisibility();
 
   if (!isOpen || !date) return null;
 
@@ -157,7 +159,7 @@ export function DayOrdersModal({
                       {getStatusText(order.status)}
                     </span>
                     <span className="rounded-full bg-gray-200 px-2.5 py-0.5 text-xs font-medium text-gray-700">
-                      Total: {formatCurrency(order.value)}
+                      Total: {isVisible ? formatCurrency(order.value) : 'R$ •••••'}
                     </span>
                   </div>
 

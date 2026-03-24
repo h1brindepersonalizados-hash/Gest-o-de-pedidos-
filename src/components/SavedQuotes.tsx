@@ -4,6 +4,7 @@ import { FileText, Search, Trash2, Edit2, Calendar, User, DollarSign } from 'luc
 import { formatCurrency } from '../utils';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useValueVisibility } from '../contexts/ValueVisibilityContext';
 
 interface SavedQuotesProps {
   quotes: Quote[];
@@ -14,6 +15,7 @@ interface SavedQuotesProps {
 export function SavedQuotes({ quotes, onEditQuote, onDeleteQuote }: SavedQuotesProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [quoteToDelete, setQuoteToDelete] = useState<string | null>(null);
+  const { isVisible } = useValueVisibility();
 
   const filteredQuotes = quotes.filter(quote => 
     quote.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -75,7 +77,7 @@ export function SavedQuotes({ quotes, onEditQuote, onDeleteQuote }: SavedQuotesP
                   <div className="flex items-start gap-2">
                     <DollarSign className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
                     <div>
-                      <p className="text-sm font-bold text-gray-900">{formatCurrency(quote.total)}</p>
+                      <p className="text-sm font-bold text-gray-900">{isVisible ? formatCurrency(quote.total) : 'R$ •••••'}</p>
                       <p className="text-xs text-gray-500">{quote.items.length} item(ns)</p>
                     </div>
                   </div>

@@ -15,7 +15,8 @@ import { SettingsView } from './components/SettingsView';
 import { OrderPrintView } from './components/OrderPrintView';
 import { Order, Quote } from './types';
 import { addMonths, subMonths, format, parseISO, isBefore, startOfDay, isSameDay } from 'date-fns';
-import { Plus, Search, Package2, LayoutDashboard, AlertTriangle, Clock, CalendarDays, Menu, X, Calculator, Send, Download, Package, FileSpreadsheet, Settings, Archive } from 'lucide-react';
+import { Plus, Search, Package2, LayoutDashboard, AlertTriangle, Clock, CalendarDays, Menu, X, Calculator, Send, Download, Package, FileSpreadsheet, Settings, Archive, Eye, EyeOff } from 'lucide-react';
+import { useValueVisibility } from './contexts/ValueVisibilityContext';
 
 type ViewMode = 'dashboard' | 'today' | 'production' | 'delayed' | 'search' | 'quote-generator' | 'saved-quotes' | 'sent' | 'products' | 'reports' | 'settings';
 
@@ -36,6 +37,7 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [printViewContent, setPrintViewContent] = useState<React.ReactNode | null>(null);
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
+  const { isVisible, toggleVisibility } = useValueVisibility();
 
   const handlePrintOrder = (order: Order) => {
     setPrintViewContent(<OrderPrintView order={order} />);
@@ -197,9 +199,14 @@ export default function App() {
           </div>
           <h1 className="text-lg font-bold text-pink-600">Gestão de Pedidos</h1>
         </div>
-        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 text-gray-600">
-          {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={toggleVisibility} className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+            {isVisible ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
+          </button>
+          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+            {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </div>
 
       {/* Sidebar */}
@@ -283,17 +290,26 @@ export default function App() {
                viewMode === 'sent' ? 'Pedidos Enviados' :
                viewMode === 'delayed' ? 'Pedidos Atrasados' : 'Resultados da Busca'}
             </h2>
-            <div className="relative w-full sm:max-w-xs">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <Search className="h-4 w-4 text-gray-400" />
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+              <div className="relative w-full sm:max-w-xs">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                  <Search className="h-4 w-4 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Buscar cliente ou produto..."
+                  value={searchQuery}
+                  onChange={handleSearch}
+                  className="block w-full rounded-full border-0 py-2 pl-10 pr-4 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-sky-400 sm:text-sm sm:leading-6 bg-sky-50"
+                />
               </div>
-              <input
-                type="text"
-                placeholder="Buscar cliente ou produto..."
-                value={searchQuery}
-                onChange={handleSearch}
-                className="block w-full rounded-full border-0 py-2 pl-10 pr-4 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-sky-400 sm:text-sm sm:leading-6 bg-sky-50"
-              />
+              <button 
+                onClick={toggleVisibility} 
+                className="hidden sm:flex p-2 text-gray-500 hover:text-sky-600 hover:bg-sky-50 rounded-full transition-colors"
+                title={isVisible ? "Ocultar valores" : "Mostrar valores"}
+              >
+                {isVisible ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
+              </button>
             </div>
           </div>
         </header>

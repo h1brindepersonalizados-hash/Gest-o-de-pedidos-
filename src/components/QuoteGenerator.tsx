@@ -3,6 +3,7 @@ import { Plus, Trash2, FileText, CheckCircle, Printer, Upload, Settings, Chevron
 import { formatCurrency, isValidDocument } from '../utils';
 import { Order, Product, CompanySettings, Quote, QuoteItem } from '../types';
 import { format } from 'date-fns';
+import { useValueVisibility } from '../contexts/ValueVisibilityContext';
 
 interface QuoteGeneratorProps {
   onCreateOrder: (prefilledData: Partial<Order>) => void;
@@ -16,6 +17,7 @@ interface QuoteGeneratorProps {
 export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, products = [], onPreview, onBack }: QuoteGeneratorProps) {
   const [quoteNumber, setQuoteNumber] = useState('');
   const [clientName, setClientName] = useState('');
+  const { isVisible } = useValueVisibility();
   const [clientDocument, setClientDocument] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [address, setAddress] = useState('');
@@ -277,8 +279,8 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
             <tr key={idx} className="break-inside-avoid">
               <td className="py-3 px-2 text-gray-800 break-words">{item.description || '-'}</td>
               <td className="py-3 px-2 text-gray-800 text-center">{item.quantity}</td>
-              <td className="py-3 px-2 text-gray-800 text-right">{formatCurrency(item.unitPrice)}</td>
-              <td className="py-3 px-2 text-gray-900 text-right font-bold">{formatCurrency(item.quantity * item.unitPrice)}</td>
+              <td className="py-3 px-2 text-gray-800 text-right">{isVisible ? formatCurrency(item.unitPrice) : 'R$ •••••'}</td>
+              <td className="py-3 px-2 text-gray-900 text-right font-bold">{isVisible ? formatCurrency(item.quantity * item.unitPrice) : 'R$ •••••'}</td>
             </tr>
           ))}
         </tbody>
@@ -289,23 +291,23 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
         <div className="w-72 bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-2">
           <div className="flex justify-between text-sm text-gray-600">
             <span>Subtotal</span>
-            <span>{formatCurrency(subtotal)}</span>
+            <span>{isVisible ? formatCurrency(subtotal) : 'R$ •••••'}</span>
           </div>
           {discount > 0 && (
             <div className="flex justify-between text-sm text-red-600">
               <span>Desconto</span>
-              <span>-{formatCurrency(discount)}</span>
+              <span>-{isVisible ? formatCurrency(discount) : 'R$ •••••'}</span>
             </div>
           )}
           {shipping > 0 && (
             <div className="flex justify-between text-sm text-gray-600">
               <span>Frete</span>
-              <span>{formatCurrency(shipping)}</span>
+              <span>{isVisible ? formatCurrency(shipping) : 'R$ •••••'}</span>
             </div>
           )}
           <div className="flex justify-between text-lg font-black text-gray-900 pt-2 border-t border-gray-300 mt-2">
             <span>Total</span>
-            <span>{formatCurrency(total)}</span>
+            <span>{isVisible ? formatCurrency(total) : 'R$ •••••'}</span>
           </div>
         </div>
       </div>
@@ -565,7 +567,7 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
                     </div>
                     <div className="w-full sm:w-32 flex items-center justify-between sm:justify-end gap-3">
                       <div className="text-sm font-medium text-gray-900">
-                        {formatCurrency(item.quantity * item.unitPrice)}
+                        {isVisible ? formatCurrency(item.quantity * item.unitPrice) : 'R$ •••••'}
                       </div>
                       <button 
                         onClick={() => removeItem(item.id)}
@@ -631,7 +633,7 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
               <div className="bg-gray-50 rounded-xl p-6 border border-gray-100 space-y-4">
                 <div className="flex justify-between text-sm text-gray-600">
                   <span>Subtotal</span>
-                  <span>{formatCurrency(subtotal)}</span>
+                  <span>{isVisible ? formatCurrency(subtotal) : 'R$ •••••'}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm text-gray-600">
                   <span>Desconto (R$)</span>
@@ -657,7 +659,7 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
                 </div>
                 <div className="pt-3 border-t border-gray-200 flex justify-between items-center">
                   <span className="text-base font-semibold text-gray-900">Total Final</span>
-                  <span className="text-xl font-bold text-sky-500">{formatCurrency(total)}</span>
+                  <span className="text-xl font-bold text-sky-500">{isVisible ? formatCurrency(total) : 'R$ •••••'}</span>
                 </div>
               </div>
             </div>

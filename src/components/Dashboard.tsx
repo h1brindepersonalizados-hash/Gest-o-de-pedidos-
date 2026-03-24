@@ -3,6 +3,7 @@ import { Order } from '../types';
 import { formatCurrency } from '../utils';
 import { TrendingUp, Clock, AlertCircle, CalendarDays, DollarSign } from 'lucide-react';
 import { isBefore, startOfDay, parseISO, isSameDay, isSameMonth } from 'date-fns';
+import { useValueVisibility } from '../contexts/ValueVisibilityContext';
 
 interface DashboardProps {
   orders: Order[];
@@ -10,6 +11,8 @@ interface DashboardProps {
 }
 
 export function Dashboard({ orders, currentDate }: DashboardProps) {
+  const { isVisible } = useValueVisibility();
+  
   const monthOrders = orders.filter((o) =>
     isSameMonth(parseISO(o.deliveryDate), currentDate)
   );
@@ -38,7 +41,9 @@ export function Dashboard({ orders, currentDate }: DashboardProps) {
           <TrendingUp className="h-4 w-4" />
           <span className="text-xs font-medium uppercase tracking-wider">Vendas no Mês</span>
         </div>
-        <p className="text-2xl font-bold text-pink-600">{formatCurrency(totalSales)}</p>
+        <p className="text-2xl font-bold text-pink-600">
+          {isVisible ? formatCurrency(totalSales) : 'R$ •••••'}
+        </p>
       </div>
 
       <div className="rounded-2xl bg-sky-50 p-4 shadow-sm border border-sky-100">
@@ -46,7 +51,9 @@ export function Dashboard({ orders, currentDate }: DashboardProps) {
           <DollarSign className="h-4 w-4" />
           <span className="text-xs font-medium uppercase tracking-wider">Entradas</span>
         </div>
-        <p className="text-2xl font-bold text-sky-700">{formatCurrency(totalDownPayments)}</p>
+        <p className="text-2xl font-bold text-sky-700">
+          {isVisible ? formatCurrency(totalDownPayments) : 'R$ •••••'}
+        </p>
       </div>
 
       <div className="rounded-2xl bg-red-50 p-4 shadow-sm border border-red-100">

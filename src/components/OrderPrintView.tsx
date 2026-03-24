@@ -2,9 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { Order, CompanySettings } from '../types';
 import { format, parseISO } from 'date-fns';
 import { formatCurrency } from '../utils';
+import { useValueVisibility } from '../contexts/ValueVisibilityContext';
 
 export function OrderPrintView({ order }: { order: Order }) {
   const [company, setCompany] = useState<CompanySettings | null>(null);
+  const { isVisible } = useValueVisibility();
 
   useEffect(() => {
     const savedSettings = localStorage.getItem('companySettings');
@@ -82,7 +84,7 @@ export function OrderPrintView({ order }: { order: Order }) {
             {/* Value */}
             <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-right">
               <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Valor Total</p>
-              <p className="text-base font-bold text-gray-900">{formatCurrency(order.value)}</p>
+              <p className="text-base font-bold text-gray-900">{isVisible ? formatCurrency(order.value) : 'R$ •••••'}</p>
             </div>
 
             {/* Artwork */}

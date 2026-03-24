@@ -4,6 +4,7 @@ import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrency } from '../utils';
 import { Edit2, Trash2, Paperclip, Package, Image as ImageIcon, Printer } from 'lucide-react';
+import { useValueVisibility } from '../contexts/ValueVisibilityContext';
 
 interface OrderListProps {
   orders: Order[];
@@ -15,6 +16,7 @@ interface OrderListProps {
 
 export function OrderList({ orders, onEdit, onDelete, onPrint, emptyMessage = "Nenhum pedido encontrado." }: OrderListProps) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const { isVisible } = useValueVisibility();
 
   const getStatusColor = (status: Order['status']) => {
     switch (status) {
@@ -87,10 +89,10 @@ export function OrderList({ orders, onEdit, onDelete, onPrint, emptyMessage = "N
                   </div>
                 </td>
                 <td className="px-6 py-4 font-medium text-gray-900">
-                  {formatCurrency(order.value)}
+                  {isVisible ? formatCurrency(order.value) : 'R$ •••••'}
                 </td>
                 <td className="px-6 py-4 text-gray-600">
-                  {order.downPayment ? formatCurrency(order.downPayment) : '-'}
+                  {order.downPayment ? (isVisible ? formatCurrency(order.downPayment) : 'R$ •••••') : '-'}
                 </td>
                 <td className="px-6 py-4">
                   <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusColor(order.status)}`}>
