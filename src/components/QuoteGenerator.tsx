@@ -84,7 +84,12 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
   };
 
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newCep = e.target.value;
+    let newCep = e.target.value.replace(/\D/g, '');
+    
+    if (newCep.length > 5) {
+      newCep = newCep.replace(/^(\d{5})(\d)/, '$1-$2');
+    }
+    
     setZipCode(newCep);
     
     const cleanCep = newCep.replace(/\D/g, '');
@@ -92,14 +97,38 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
       try {
         const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
         const data = await response.json();
+        
         if (!data.erro) {
           setAddress(data.logradouro || '');
           setNeighborhood(data.bairro || '');
           setCity(data.localidade || '');
           setState(data.uf || '');
+        } else {
+          // Fallback to BrasilAPI if ViaCEP returns error
+          const fallbackResponse = await fetch(`https://brasilapi.com.br/api/cep/v1/${cleanCep}`);
+          const fallbackData = await fallbackResponse.json();
+          if (!fallbackData.errors) {
+            setAddress(fallbackData.street || '');
+            setNeighborhood(fallbackData.neighborhood || '');
+            setCity(fallbackData.city || '');
+            setState(fallbackData.state || '');
+          }
         }
       } catch (error) {
         console.error("Erro ao buscar CEP:", error);
+        try {
+          // Fallback to BrasilAPI in case of network error
+          const fallbackResponse = await fetch(`https://brasilapi.com.br/api/cep/v1/${cleanCep}`);
+          const fallbackData = await fallbackResponse.json();
+          if (!fallbackData.errors) {
+            setAddress(fallbackData.street || '');
+            setNeighborhood(fallbackData.neighborhood || '');
+            setCity(fallbackData.city || '');
+            setState(fallbackData.state || '');
+          }
+        } catch (fallbackError) {
+          console.error("Erro no fallback de CEP:", fallbackError);
+        }
       }
     }
   };
