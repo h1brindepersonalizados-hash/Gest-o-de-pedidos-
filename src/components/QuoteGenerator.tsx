@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, FileText, CheckCircle, Printer, Upload, Settings, ChevronDown, ChevronUp, AlertCircle, Save } from 'lucide-react';
 import { formatCurrency, isValidDocument } from '../utils';
 import { Order, Product, CompanySettings, Quote, QuoteItem } from '../types';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { useValueVisibility } from '../contexts/ValueVisibilityContext';
 
 interface QuoteGeneratorProps {
