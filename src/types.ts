@@ -15,6 +15,36 @@ export interface CompanySettings {
   logo: string;
 }
 
+export interface QuoteItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface Quote {
+  id: string;
+  quoteNumber: string;
+  clientName: string;
+  clientDocument: string;
+  clientPhone: string;
+  theme: string;
+  address: string;
+  addressNumber: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  items: QuoteItem[];
+  subtotal: number;
+  discount: number;
+  shipping: number;
+  total: number;
+  notes: string;
+  artwork?: { name: string; data: string } | null;
+  createdAt: string;
+}
+
 export interface Order {
   id: string;
   clientName: string;

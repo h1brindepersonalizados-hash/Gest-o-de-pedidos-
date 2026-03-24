@@ -1,25 +1,28 @@
 import React, { useState, useMemo } from 'react';
 import { useOrders } from './hooks/useOrders';
 import { useProducts } from './hooks/useProducts';
+import { useQuotes } from './hooks/useQuotes';
 import { Calendar } from './components/Calendar';
 import { Dashboard } from './components/Dashboard';
 import { OrderModal } from './components/OrderModal';
 import { DayOrdersModal } from './components/DayOrdersModal';
 import { OrderList } from './components/OrderList';
 import { QuoteGenerator } from './components/QuoteGenerator';
+import { SavedQuotes } from './components/SavedQuotes';
 import { ProductList } from './components/ProductList';
 import { Reports } from './components/Reports';
 import { SettingsView } from './components/SettingsView';
 import { OrderPrintView } from './components/OrderPrintView';
-import { Order } from './types';
+import { Order, Quote } from './types';
 import { addMonths, subMonths, format, parseISO, isBefore, startOfDay, isSameDay } from 'date-fns';
-import { Plus, Search, Package2, LayoutDashboard, AlertTriangle, Clock, CalendarDays, Menu, X, Calculator, Send, Download, Package, FileSpreadsheet, Settings } from 'lucide-react';
+import { Plus, Search, Package2, LayoutDashboard, AlertTriangle, Clock, CalendarDays, Menu, X, Calculator, Send, Download, Package, FileSpreadsheet, Settings, Archive } from 'lucide-react';
 
-type ViewMode = 'dashboard' | 'today' | 'production' | 'delayed' | 'search' | 'quote-generator' | 'sent' | 'products' | 'reports' | 'settings';
+type ViewMode = 'dashboard' | 'today' | 'production' | 'delayed' | 'search' | 'quote-generator' | 'saved-quotes' | 'sent' | 'products' | 'reports' | 'settings';
 
 export default function App() {
   const { orders, addOrder, updateOrder, deleteOrder } = useOrders();
   const { products, addProduct, updateProduct, deleteProduct } = useProducts();
+  const { quotes, addQuote, updateQuote, deleteQuote } = useQuotes();
   const [currentDate, setCurrentDate] = useState(new Date());
   
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
@@ -32,6 +35,7 @@ export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [printViewContent, setPrintViewContent] = useState<React.ReactNode | null>(null);
+  const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
 
   const handlePrintOrder = (order: Order) => {
     setPrintViewContent(<OrderPrintView order={order} />);
@@ -70,6 +74,23 @@ export default function App() {
     setPrefilledOrderData(quoteData);
     setSelectedDateForNewOrder(undefined);
     setIsOrderModalOpen(true);
+    setEditingQuote(null);
+    setViewMode('dashboard');
+  };
+
+  const handleSaveQuote = (quoteData: Omit<Quote, 'id' | 'createdAt'> | Quote) => {
+    if ('id' in quoteData) {
+      updateQuote(quoteData.id, quoteData);
+    } else {
+      addQuote(quoteData);
+    }
+    setViewMode('saved-quotes');
+    setEditingQuote(null);
+  };
+
+  const handleEditQuote = (quote: Quote) => {
+    setEditingQuote(quote);
+    setViewMode('quote-generator');
   };
 
   const today = startOfDay(new Date());
@@ -207,6 +228,7 @@ export default function App() {
           <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
             <NavItem icon={LayoutDashboard} label="Visão Geral" mode="dashboard" />
             <NavItem icon={Calculator} label="Gerador de Orçamento" mode="quote-generator" />
+            <NavItem icon={Archive} label="Orçamentos Salvos" mode="saved-quotes" count={quotes.length} />
             <NavItem icon={Package} label="Produtos" mode="products" />
             <NavItem icon={FileSpreadsheet} label="Relatórios" mode="reports" />
             <NavItem icon={Settings} label="Configurações" mode="settings" />
@@ -252,6 +274,7 @@ export default function App() {
             <h2 className="text-xl font-semibold text-pink-600 hidden sm:block capitalize">
               {viewMode === 'dashboard' ? 'Visão Geral' : 
                viewMode === 'quote-generator' ? 'Gerador de Orçamento' :
+               viewMode === 'saved-quotes' ? 'Orçamentos Salvos' :
                viewMode === 'products' ? 'Produtos' :
                viewMode === 'reports' ? 'Relatórios' :
                viewMode === 'settings' ? 'Configurações' :
@@ -289,9 +312,20 @@ export default function App() {
             ) : viewMode === 'quote-generator' ? (
               <QuoteGenerator 
                 onCreateOrder={handleCreateOrderFromQuote} 
+                onSaveQuote={handleSaveQuote}
+                initialQuote={editingQuote}
                 products={products} 
                 onPreview={setPrintViewContent} 
-                onBack={() => setViewMode('dashboard')} 
+                onBack={() => {
+                  setViewMode('dashboard');
+                  setEditingQuote(null);
+                }} 
+              />
+            ) : viewMode === 'saved-quotes' ? (
+              <SavedQuotes 
+                quotes={quotes}
+                onEditQuote={handleEditQuote}
+                onDeleteQuote={deleteQuote}
               />
             ) : viewMode === 'products' ? (
               <ProductList 

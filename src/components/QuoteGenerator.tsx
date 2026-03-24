@@ -1,24 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, FileText, CheckCircle, Printer, Upload, Settings, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, FileText, CheckCircle, Printer, Upload, Settings, ChevronDown, ChevronUp, AlertCircle, Save } from 'lucide-react';
 import { formatCurrency, isValidDocument } from '../utils';
-import { Order, Product, CompanySettings } from '../types';
+import { Order, Product, CompanySettings, Quote, QuoteItem } from '../types';
 import { format } from 'date-fns';
-
-interface QuoteItem {
-  id: string;
-  description: string;
-  quantity: number;
-  unitPrice: number;
-}
 
 interface QuoteGeneratorProps {
   onCreateOrder: (prefilledData: Partial<Order>) => void;
+  onSaveQuote?: (quote: Omit<Quote, 'id' | 'createdAt'> | Quote) => void;
+  initialQuote?: Quote | null;
   products?: Product[];
   onPreview: (content: React.ReactNode) => void;
   onBack?: () => void;
 }
 
-export function QuoteGenerator({ onCreateOrder, products = [], onPreview, onBack }: QuoteGeneratorProps) {
+export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, products = [], onPreview, onBack }: QuoteGeneratorProps) {
   const [quoteNumber, setQuoteNumber] = useState('');
   const [clientName, setClientName] = useState('');
   const [clientDocument, setClientDocument] = useState('');
@@ -46,15 +41,34 @@ export function QuoteGenerator({ onCreateOrder, products = [], onPreview, onBack
   });
 
   useEffect(() => {
-    const lastQuote = localStorage.getItem('lastQuoteNumber');
-    const nextQuote = lastQuote ? parseInt(lastQuote, 10) + 1 : 1;
-    setQuoteNumber(nextQuote.toString().padStart(2, '0'));
+    if (initialQuote) {
+      setQuoteNumber(initialQuote.quoteNumber);
+      setClientName(initialQuote.clientName);
+      setClientDocument(initialQuote.clientDocument);
+      setClientPhone(initialQuote.clientPhone);
+      setAddress(initialQuote.address);
+      setAddressNumber(initialQuote.addressNumber);
+      setNeighborhood(initialQuote.neighborhood);
+      setZipCode(initialQuote.zipCode);
+      setCity(initialQuote.city);
+      setState(initialQuote.state);
+      setTheme(initialQuote.theme);
+      setItems(initialQuote.items);
+      setDiscount(initialQuote.discount);
+      setShipping(initialQuote.shipping);
+      setNotes(initialQuote.notes);
+      setArtwork(initialQuote.artwork || null);
+    } else {
+      const lastQuote = localStorage.getItem('lastQuoteNumber');
+      const nextQuote = lastQuote ? parseInt(lastQuote, 10) + 1 : 1;
+      setQuoteNumber(nextQuote.toString().padStart(2, '0'));
+    }
 
     const savedSettings = localStorage.getItem('companySettings');
     if (savedSettings) {
       setCompany(JSON.parse(savedSettings));
     }
-  }, []);
+  }, [initialQuote]);
 
   const saveQuoteNumber = () => {
     const current = parseInt(quoteNumber, 10);
@@ -105,6 +119,46 @@ export function QuoteGenerator({ onCreateOrder, products = [], onPreview, onBack
   const subtotal = items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
   const total = Math.max(0, subtotal - discount) + shipping;
 
+  const handleSaveQuoteData = () => {
+    if (!clientName.trim()) {
+      alert('Por favor, informe o nome do cliente.');
+      return;
+    }
+
+    if (items.some(i => !i.description.trim())) {
+      alert('Por favor, preencha a descrição de todos os itens.');
+      return;
+    }
+
+    if (onSaveQuote) {
+      if (!initialQuote) {
+        saveQuoteNumber();
+      }
+      
+      onSaveQuote({
+        ...(initialQuote ? { id: initialQuote.id, createdAt: initialQuote.createdAt } : {}),
+        quoteNumber,
+        clientName,
+        clientDocument,
+        clientPhone,
+        theme,
+        address,
+        addressNumber,
+        neighborhood,
+        city,
+        state,
+        zipCode,
+        items,
+        subtotal,
+        discount,
+        shipping,
+        total,
+        notes,
+        artwork: artwork || null
+      });
+    }
+  };
+
   const handleGenerateOrder = () => {
     if (!clientName.trim()) {
       alert('Por favor, informe o nome do cliente.');
@@ -134,7 +188,9 @@ export function QuoteGenerator({ onCreateOrder, products = [], onPreview, onBack
     generatedNotes += `Total Final: ${formatCurrency(total)}\n`;
     if (notes) generatedNotes += `\nObservações: ${notes}`;
 
-    saveQuoteNumber();
+    if (!initialQuote) {
+      saveQuoteNumber();
+    }
     
     onCreateOrder({
       clientName,
@@ -184,7 +240,7 @@ export function QuoteGenerator({ onCreateOrder, products = [], onPreview, onBack
         <div className="text-right">
           <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tight">Orçamento</h1>
           {quoteNumber && <p className="text-gray-500 mt-1 font-medium">Nº {quoteNumber}</p>}
-          <p className="text-sm text-gray-500 mt-2">Data: {format(new Date(), 'dd/MM/yyyy')}</p>
+          <p className="text-sm text-gray-500 mt-2">Data: {format(initialQuote ? new Date(initialQuote.createdAt) : new Date(), 'dd/MM/yyyy')}</p>
         </div>
       </div>
 
@@ -621,8 +677,17 @@ export function QuoteGenerator({ onCreateOrder, products = [], onPreview, onBack
                 className="flex items-center justify-center gap-2 rounded-xl bg-white border border-gray-300 px-6 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-50 shadow-sm"
               >
                 <Printer className="h-5 w-5" />
-                Salvar Orçamento
+                Imprimir
               </button>
+              {onSaveQuote && (
+                <button 
+                  onClick={handleSaveQuoteData}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-white border border-gray-300 px-6 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-50 shadow-sm"
+                >
+                  <Save className="h-5 w-5" />
+                  Salvar Orçamento
+                </button>
+              )}
               <button 
                 onClick={handleGenerateOrder}
                 className="flex items-center justify-center gap-2 rounded-xl bg-sky-400 px-6 py-3 font-medium text-white transition-colors hover:bg-sky-500 shadow-sm"
