@@ -1,7 +1,7 @@
 import React from 'react';
 import { Order } from '../types';
 import { formatCurrency } from '../utils';
-import { TrendingUp, Clock, AlertCircle, CalendarDays, DollarSign } from 'lucide-react';
+import { TrendingUp, Clock, AlertCircle, CalendarDays, DollarSign, Eye, EyeOff } from 'lucide-react';
 import { isBefore, startOfDay, parseISO, isSameDay, isSameMonth } from 'date-fns';
 import { useValueVisibility } from '../contexts/ValueVisibilityContext';
 
@@ -11,7 +11,7 @@ interface DashboardProps {
 }
 
 export function Dashboard({ orders, currentDate }: DashboardProps) {
-  const { isVisible } = useValueVisibility();
+  const { isVisible, toggleVisibility } = useValueVisibility();
   
   const monthOrders = orders.filter((o) =>
     isSameMonth(parseISO(o.deliveryDate), currentDate)
@@ -37,9 +37,14 @@ export function Dashboard({ orders, currentDate }: DashboardProps) {
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
       <div className="rounded-2xl bg-white p-4 shadow-sm border border-gray-100">
-        <div className="mb-2 flex items-center gap-2 text-gray-500">
-          <TrendingUp className="h-4 w-4" />
-          <span className="text-xs font-medium uppercase tracking-wider">Vendas no Mês</span>
+        <div className="mb-2 flex items-center justify-between text-gray-500">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            <span className="text-xs font-medium uppercase tracking-wider">Vendas no Mês</span>
+          </div>
+          <button onClick={toggleVisibility} className="hover:text-sky-600 transition-colors" title={isVisible ? "Ocultar valores" : "Mostrar valores"}>
+            {isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+          </button>
         </div>
         <p className="text-2xl font-bold text-pink-600">
           {isVisible ? formatCurrency(totalSales) : 'R$ •••••'}
@@ -47,9 +52,14 @@ export function Dashboard({ orders, currentDate }: DashboardProps) {
       </div>
 
       <div className="rounded-2xl bg-sky-50 p-4 shadow-sm border border-sky-100">
-        <div className="mb-2 flex items-center gap-2 text-sky-600">
-          <DollarSign className="h-4 w-4" />
-          <span className="text-xs font-medium uppercase tracking-wider">Entradas</span>
+        <div className="mb-2 flex items-center justify-between text-sky-600">
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4" />
+            <span className="text-xs font-medium uppercase tracking-wider">Entradas</span>
+          </div>
+          <button onClick={toggleVisibility} className="hover:text-sky-800 transition-colors" title={isVisible ? "Ocultar valores" : "Mostrar valores"}>
+            {isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+          </button>
         </div>
         <p className="text-2xl font-bold text-sky-700">
           {isVisible ? formatCurrency(totalDownPayments) : 'R$ •••••'}

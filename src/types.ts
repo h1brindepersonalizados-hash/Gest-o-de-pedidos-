@@ -31,10 +31,12 @@ export interface Quote {
   theme: string;
   address: string;
   addressNumber: string;
+  addressComplement?: string;
   neighborhood: string;
   city: string;
   state: string;
   zipCode: string;
+  deliveryDate?: string;
   items: QuoteItem[];
   subtotal: number;
   discount: number;

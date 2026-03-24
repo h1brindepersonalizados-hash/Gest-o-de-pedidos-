@@ -22,11 +22,13 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
   const [clientPhone, setClientPhone] = useState('');
   const [address, setAddress] = useState('');
   const [addressNumber, setAddressNumber] = useState('');
+  const [addressComplement, setAddressComplement] = useState('');
   const [neighborhood, setNeighborhood] = useState('');
   const [zipCode, setZipCode] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [theme, setTheme] = useState('');
+  const [deliveryDate, setDeliveryDate] = useState('');
 
   const [items, setItems] = useState<QuoteItem[]>([{ id: '1', description: '', quantity: 1, unitPrice: 0 }]);
   const [discount, setDiscount] = useState<number>(0);
@@ -50,11 +52,13 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
       setClientPhone(initialQuote.clientPhone);
       setAddress(initialQuote.address);
       setAddressNumber(initialQuote.addressNumber);
+      setAddressComplement(initialQuote.addressComplement || '');
       setNeighborhood(initialQuote.neighborhood);
       setZipCode(initialQuote.zipCode);
       setCity(initialQuote.city);
       setState(initialQuote.state);
       setTheme(initialQuote.theme);
+      setDeliveryDate(initialQuote.deliveryDate || '');
       setItems(initialQuote.items);
       setDiscount(initialQuote.discount);
       setShipping(initialQuote.shipping);
@@ -146,10 +150,12 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
         theme,
         address,
         addressNumber,
+        addressComplement,
         neighborhood,
         city,
         state,
         zipCode,
+        deliveryDate,
         items,
         subtotal,
         discount,
@@ -179,7 +185,8 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
     if (clientDocument) generatedNotes += `CPF/CNPJ: ${clientDocument}\n`;
     if (clientPhone) generatedNotes += `Telefone: ${clientPhone}\n`;
     if (theme) generatedNotes += `Tema/Empresa: ${theme}\n`;
-    generatedNotes += `\nEndereço de Entrega:\n${address}, ${addressNumber} - ${neighborhood}\nCEP: ${zipCode} - ${city}/${state}\n\n`;
+    if (deliveryDate) generatedNotes += `Data de Envio: ${format(parseISO(deliveryDate), 'dd/MM/yyyy')}\n`;
+    generatedNotes += `\nEndereço de Entrega:\n${address}, ${addressNumber}${addressComplement ? ` - ${addressComplement}` : ''} - ${neighborhood}\nCEP: ${zipCode} - ${city}/${state}\n\n`;
     
     items.forEach(i => {
       generatedNotes += `- ${i.quantity}x ${i.description} (${formatCurrency(i.unitPrice)} un) = ${formatCurrency(i.quantity * i.unitPrice)}\n`;
@@ -198,6 +205,7 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
       clientName,
       product: productDescription,
       value: total,
+      deliveryDate: deliveryDate || undefined,
       notes: generatedNotes,
       status: 'pendente',
       artwork: artwork || undefined
@@ -243,6 +251,7 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
           <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tight">Orçamento</h1>
           {quoteNumber && <p className="text-gray-500 mt-1 font-medium">Nº {quoteNumber}</p>}
           <p className="text-sm text-gray-500 mt-2">Data: {format(initialQuote ? new Date(initialQuote.createdAt) : new Date(), 'dd/MM/yyyy')}</p>
+          {deliveryDate && <p className="text-sm text-gray-900 mt-1 font-bold">Envio: {format(parseISO(deliveryDate), 'dd/MM/yyyy')}</p>}
         </div>
       </div>
 
@@ -257,7 +266,7 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
         </div>
         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
           <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Endereço de Entrega</p>
-          <p className="text-sm text-gray-900">{address}{addressNumber ? `, ${addressNumber}` : ''}</p>
+          <p className="text-sm text-gray-900">{address}{addressNumber ? `, ${addressNumber}` : ''}{addressComplement ? ` - ${addressComplement}` : ''}</p>
           <p className="text-sm text-gray-900">{neighborhood}</p>
           <p className="text-sm text-gray-900">{city}{state ? ` - ${state}` : ''}</p>
           <p className="text-sm text-gray-900">{zipCode}</p>
@@ -324,7 +333,7 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
 
       {/* Artwork */}
       {artwork && (
-        <div className="mt-8 break-inside-avoid">
+        <div className="mt-8 break-inside-avoid print:hidden">
           <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 border-b border-gray-200 pb-2">Arte / Referência</p>
           <img src={artwork.data} alt="Arte" className="max-w-full max-h-[8cm] rounded-lg border border-gray-200 object-contain mt-4" />
         </div>
@@ -362,7 +371,7 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
 
           <div className="space-y-6">
             {/* Client Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Número do Orçamento</label>
                 <input
@@ -384,7 +393,7 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">CPF / CNPJ</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">CPF / CNPJ (Opcional)</label>
                 <input
                   type="text"
                   value={clientDocument}
@@ -409,6 +418,15 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
                   value={clientPhone}
                   onChange={(e) => setClientPhone(e.target.value)}
                   placeholder="(00) 00000-0000"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Data de Envio</label>
+                <input
+                  type="date"
+                  value={deliveryDate}
+                  onChange={(e) => setDeliveryDate(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
                 />
               </div>
@@ -447,6 +465,16 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
                     className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 bg-white"
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Complemento</label>
+                  <input
+                    type="text"
+                    value={addressComplement}
+                    onChange={(e) => setAddressComplement(e.target.value)}
+                    placeholder="Apto, Bloco, etc."
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 bg-white"
+                  />
+                </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
                   <input
@@ -456,7 +484,7 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
                     className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 bg-white"
                   />
                 </div>
-                <div>
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
                   <input
                     type="text"
@@ -465,7 +493,7 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
                     className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 bg-white"
                   />
                 </div>
-                <div>
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
                   <input
                     type="text"
