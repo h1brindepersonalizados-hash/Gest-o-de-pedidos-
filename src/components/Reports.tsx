@@ -15,7 +15,7 @@ export function Reports({ orders }: ReportsProps) {
 
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
-      const date = parseISO(order.deliveryDate);
+      const date = order.createdAt ? parseISO(order.createdAt) : parseISO(order.deliveryDate);
       return date.getMonth() === selectedMonth && date.getFullYear() === selectedYear;
     });
   }, [orders, selectedMonth, selectedYear]);
@@ -26,8 +26,9 @@ export function Reports({ orders }: ReportsProps) {
 
   const handleDownloadCSV = () => {
     const csvContent = [
-      ['Data de Entrega', 'Cliente', 'Produto', 'Valor Total', 'Entrada', 'Restante', 'Status', 'Observacoes'].join(','),
+      ['Data do Pedido', 'Data de Entrega', 'Cliente', 'Produto', 'Valor Total', 'Entrada', 'Restante', 'Status', 'Observacoes'].join(','),
       ...filteredOrders.map(o => [
+        o.createdAt ? format(parseISO(o.createdAt), 'dd/MM/yyyy') : format(parseISO(o.deliveryDate), 'dd/MM/yyyy'),
         format(parseISO(o.deliveryDate), 'dd/MM/yyyy'),
         `"${o.clientName}"`,
         `"${o.product}"`,
@@ -52,8 +53,9 @@ export function Reports({ orders }: ReportsProps) {
 
   const handleDownloadAllCSV = () => {
     const csvContent = [
-      ['Data de Entrega', 'Cliente', 'Produto', 'Valor Total', 'Entrada', 'Restante', 'Status', 'Observacoes'].join(','),
+      ['Data do Pedido', 'Data de Entrega', 'Cliente', 'Produto', 'Valor Total', 'Entrada', 'Restante', 'Status', 'Observacoes'].join(','),
       ...orders.map(o => [
+        o.createdAt ? format(parseISO(o.createdAt), 'dd/MM/yyyy') : format(parseISO(o.deliveryDate), 'dd/MM/yyyy'),
         format(parseISO(o.deliveryDate), 'dd/MM/yyyy'),
         `"${o.clientName}"`,
         `"${o.product}"`,

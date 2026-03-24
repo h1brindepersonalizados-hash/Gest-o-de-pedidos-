@@ -17,6 +17,7 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
   const [clientName, setClientName] = useState('');
   const [product, setProduct] = useState('');
   const [value, setValue] = useState('');
+  const [downPayment, setDownPayment] = useState('');
   const [deliveryDate, setDeliveryDate] = useState('');
   const [seamstressDate, setSeamstressDate] = useState('');
   const [status, setStatus] = useState<OrderStatus>('pendente');
@@ -29,6 +30,7 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
       setClientName(initialData.clientName);
       setProduct(initialData.product);
       setValue(initialData.value.toString());
+      setDownPayment(initialData.downPayment?.toString() || '');
       setDeliveryDate(initialData.deliveryDate);
       setSeamstressDate(initialData.seamstressDate || '');
       setStatus(initialData.status);
@@ -39,6 +41,7 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
       setClientName(prefilledData.clientName || '');
       setProduct(prefilledData.product || '');
       setValue(prefilledData.value?.toString() || '');
+      setDownPayment(prefilledData.downPayment?.toString() || '');
       setDeliveryDate(prefilledData.deliveryDate || selectedDate || new Date().toISOString().split('T')[0]);
       setSeamstressDate(prefilledData.seamstressDate || '');
       setStatus(prefilledData.status || 'pendente');
@@ -49,6 +52,7 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
       setClientName('');
       setProduct('');
       setValue('');
+      setDownPayment('');
       setDeliveryDate(selectedDate || new Date().toISOString().split('T')[0]);
       setSeamstressDate('');
       setStatus('pendente');
@@ -66,6 +70,7 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
       clientName,
       product,
       value: parseFloat(value) || 0,
+      downPayment: downPayment ? parseFloat(downPayment) : undefined,
       deliveryDate,
       seamstressDate,
       status,
@@ -172,7 +177,7 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
             </datalist>
           </div>
 
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">Valor Total (R$)</label>
               <input
@@ -182,6 +187,18 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
                 required
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Entrada (R$)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={downPayment}
+                onChange={(e) => setDownPayment(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
                 placeholder="0.00"
               />

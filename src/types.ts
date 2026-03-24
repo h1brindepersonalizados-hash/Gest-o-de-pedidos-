@@ -59,4 +59,5 @@ export interface Order {
   notes: string;
   quoteFile?: { name: string; data: string };
   artwork?: { name: string; data: string };
+  createdAt?: string; // YYYY-MM-DDTHH:mm:ss.sssZ format
 }

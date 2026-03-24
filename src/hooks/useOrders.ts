@@ -19,7 +19,11 @@ export function useOrders() {
   }, [orders]);
 
   const addOrder = (order: Omit<Order, 'id'>) => {
-    const newOrder = { ...order, id: crypto.randomUUID() };
+    const newOrder = { 
+      ...order, 
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString()
+    };
     setOrders((prev) => [...prev, newOrder]);
   };
 

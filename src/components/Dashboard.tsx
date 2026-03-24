@@ -13,9 +13,10 @@ interface DashboardProps {
 export function Dashboard({ orders, currentDate }: DashboardProps) {
   const { isVisible, toggleVisibility } = useValueVisibility();
   
-  const monthOrders = orders.filter((o) =>
-    isSameMonth(parseISO(o.deliveryDate), currentDate)
-  );
+  const monthOrders = orders.filter((o) => {
+    const dateToUse = o.createdAt ? parseISO(o.createdAt) : parseISO(o.deliveryDate);
+    return isSameMonth(dateToUse, new Date());
+  });
 
   const totalSales = monthOrders.reduce((acc, curr) => acc + curr.value, 0);
   const totalDownPayments = monthOrders.reduce((acc, curr) => acc + (curr.downPayment || 0), 0);
