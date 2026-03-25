@@ -31,7 +31,8 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
   const [deliveryDate, setDeliveryDate] = useState('');
 
   const [items, setItems] = useState<QuoteItem[]>([{ id: '1', description: '', quantity: 1, unitPrice: 0 }]);
-  const [discount, setDiscount] = useState<number>(0);
+  const [discountInput, setDiscountInput] = useState<number>(0);
+  const [discountType, setDiscountType] = useState<'fixed' | 'percentage'>('fixed');
   const [shipping, setShipping] = useState<number>(0);
   const [notes, setNotes] = useState('');
   const [artwork, setArtwork] = useState<{ name: string; data: string } | null>(null);
@@ -60,7 +61,8 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
       setTheme(initialQuote.theme);
       setDeliveryDate(initialQuote.deliveryDate || '');
       setItems(initialQuote.items);
-      setDiscount(initialQuote.discount);
+      setDiscountInput(initialQuote.discount);
+      setDiscountType('fixed');
       setShipping(initialQuote.shipping);
       setNotes(initialQuote.notes);
       setArtwork(initialQuote.artwork || null);
@@ -152,6 +154,7 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
   };
 
   const subtotal = items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
+  const discount = discountType === 'percentage' ? (subtotal * discountInput) / 100 : discountInput;
   const total = Math.max(0, subtotal - discount) + shipping;
 
   const handleSaveQuoteData = () => {
@@ -693,15 +696,30 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
                   <span>{isVisible ? formatCurrency(subtotal) : 'R$ •••••'}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm text-gray-600">
-                  <span>Desconto (R$)</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={discount}
-                    onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                    className="w-24 rounded-lg border border-gray-300 px-2 py-1 text-right outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
-                  />
+                  <div className="flex items-center gap-2">
+                    <span>Desconto</span>
+                    <select
+                      value={discountType}
+                      onChange={(e) => setDiscountType(e.target.value as 'fixed' | 'percentage')}
+                      className="rounded-md border border-gray-300 px-1 py-0.5 text-xs outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
+                    >
+                      <option value="fixed">R$</option>
+                      <option value="percentage">%</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {discountType === 'percentage' && discount > 0 && (
+                      <span className="text-xs text-gray-400">({formatCurrency(discount)})</span>
+                    )}
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={discountInput}
+                      onChange={(e) => setDiscountInput(parseFloat(e.target.value) || 0)}
+                      className="w-24 rounded-lg border border-gray-300 px-2 py-1 text-right outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
+                    />
+                  </div>
                 </div>
                 <div className="flex justify-between items-center text-sm text-gray-600">
                   <span>Frete (R$)</span>

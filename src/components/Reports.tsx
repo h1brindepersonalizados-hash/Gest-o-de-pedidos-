@@ -25,19 +25,19 @@ export function Reports({ orders }: ReportsProps) {
   const totalPending = totalSales - totalDownPayments;
 
   const handleDownloadCSV = () => {
-    const csvContent = [
-      ['Data do Pedido', 'Data de Entrega', 'Cliente', 'Produto', 'Valor Total', 'Entrada', 'Restante', 'Status', 'Observacoes'].join(','),
+    const csvContent = '\uFEFF' + [
+      ['Data do Pedido', 'Data de Entrega', 'Cliente', 'Produto', 'Valor Total', 'Entrada', 'Restante', 'Status', 'Observacoes'].join(';'),
       ...filteredOrders.map(o => [
         o.createdAt ? format(parseISO(o.createdAt), 'dd/MM/yyyy') : format(parseISO(o.deliveryDate), 'dd/MM/yyyy'),
         format(parseISO(o.deliveryDate), 'dd/MM/yyyy'),
-        `"${o.clientName}"`,
-        `"${o.product}"`,
-        o.value,
-        o.downPayment || 0,
-        o.value - (o.downPayment || 0),
+        `"${o.clientName.replace(/"/g, '""')}"`,
+        `"${o.product.replace(/"/g, '""')}"`,
+        o.value.toFixed(2).replace('.', ','),
+        (o.downPayment || 0).toFixed(2).replace('.', ','),
+        (o.value - (o.downPayment || 0)).toFixed(2).replace('.', ','),
         o.status,
-        `"${o.notes ? o.notes.replace(/\n/g, ' ') : ''}"`
-      ].join(','))
+        `"${o.notes ? o.notes.replace(/\n/g, ' ').replace(/"/g, '""') : ''}"`
+      ].join(';'))
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -52,19 +52,19 @@ export function Reports({ orders }: ReportsProps) {
   };
 
   const handleDownloadAllCSV = () => {
-    const csvContent = [
-      ['Data do Pedido', 'Data de Entrega', 'Cliente', 'Produto', 'Valor Total', 'Entrada', 'Restante', 'Status', 'Observacoes'].join(','),
+    const csvContent = '\uFEFF' + [
+      ['Data do Pedido', 'Data de Entrega', 'Cliente', 'Produto', 'Valor Total', 'Entrada', 'Restante', 'Status', 'Observacoes'].join(';'),
       ...orders.map(o => [
         o.createdAt ? format(parseISO(o.createdAt), 'dd/MM/yyyy') : format(parseISO(o.deliveryDate), 'dd/MM/yyyy'),
         format(parseISO(o.deliveryDate), 'dd/MM/yyyy'),
-        `"${o.clientName}"`,
-        `"${o.product}"`,
-        o.value,
-        o.downPayment || 0,
-        o.value - (o.downPayment || 0),
+        `"${o.clientName.replace(/"/g, '""')}"`,
+        `"${o.product.replace(/"/g, '""')}"`,
+        o.value.toFixed(2).replace('.', ','),
+        (o.downPayment || 0).toFixed(2).replace('.', ','),
+        (o.value - (o.downPayment || 0)).toFixed(2).replace('.', ','),
         o.status,
-        `"${o.notes ? o.notes.replace(/\n/g, ' ') : ''}"`
-      ].join(','))
+        `"${o.notes ? o.notes.replace(/\n/g, ' ').replace(/"/g, '""') : ''}"`
+      ].join(';'))
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

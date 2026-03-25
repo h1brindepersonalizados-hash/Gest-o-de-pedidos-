@@ -114,18 +114,18 @@ export default function App() {
   ), [orders]);
 
   const handleDownloadSentOrders = () => {
-    const csvContent = [
-      ['Data Costureira', 'Data Envio', 'Cliente', 'Produto', 'Valor Total', 'Entrada', 'Status', 'Observacoes'].join(','),
+    const csvContent = '\uFEFF' + [
+      ['Data Costureira', 'Data Envio', 'Cliente', 'Produto', 'Valor Total', 'Entrada', 'Status', 'Observacoes'].join(';'),
       ...sentOrders.map(o => [
-        o.seamstressDate || '',
-        o.deliveryDate,
-        `"${o.clientName}"`,
-        `"${o.product}"`,
-        o.value,
-        o.downPayment || 0,
+        o.seamstressDate ? format(parseISO(o.seamstressDate), 'dd/MM/yyyy') : '',
+        format(parseISO(o.deliveryDate), 'dd/MM/yyyy'),
+        `"${o.clientName.replace(/"/g, '""')}"`,
+        `"${o.product.replace(/"/g, '""')}"`,
+        o.value.toFixed(2).replace('.', ','),
+        (o.downPayment || 0).toFixed(2).replace('.', ','),
         o.status,
-        `"${o.notes || ''}"`
-      ].join(','))
+        `"${o.notes ? o.notes.replace(/\n/g, ' ').replace(/"/g, '""') : ''}"`
+      ].join(';'))
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
