@@ -89,10 +89,10 @@ export function OrderPrintView({ order }: { order: Order }) {
 
             {/* Artwork */}
             {order.artwork && (
-              <div className="print:hidden" style={{ pageBreakInside: 'avoid' }}>
+              <div style={{ pageBreakInside: 'avoid' }}>
                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 border-b border-gray-200 pb-1 text-right">Arte Anexada</p>
                 <div className="flex justify-end">
-                  <img src={order.artwork.data} alt="Arte" className="max-h-[150px] rounded border border-gray-200 object-contain" />
+                  <img src={order.artwork.data} alt="Arte" className="w-full rounded border border-gray-200 object-contain" />
                 </div>
               </div>
             )}
