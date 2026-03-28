@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, FileText, CheckCircle, Printer, Upload, Settings, ChevronDown, ChevronUp, AlertCircle, Save } from 'lucide-react';
-import { formatCurrency, isValidDocument } from '../utils';
+import { formatCurrency, isValidDocument, compressImage } from '../utils';
 import { Order, Product, CompanySettings, Quote, QuoteItem } from '../types';
 import { format, parseISO } from 'date-fns';
 import { useValueVisibility } from '../contexts/ValueVisibilityContext';
@@ -67,9 +67,12 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
       setNotes(initialQuote.notes);
       setArtwork(initialQuote.artwork || null);
     } else {
-      const lastQuote = localStorage.getItem('lastQuoteNumber');
-      const nextQuote = lastQuote ? parseInt(lastQuote, 10) + 1 : 1;
-      setQuoteNumber(nextQuote.toString().padStart(2, '0'));
+      const savedLastNumber = localStorage.getItem('lastQuoteNumber');
+      if (savedLastNumber) {
+        setQuoteNumber((parseInt(savedLastNumber, 10) + 1).toString().padStart(4, '0'));
+      } else {
+        setQuoteNumber('0001');
+      }
     }
 
     const savedSettings = localStorage.getItem('companySettings');
@@ -77,13 +80,6 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
       setCompany(JSON.parse(savedSettings));
     }
   }, [initialQuote]);
-
-  const saveQuoteNumber = () => {
-    const current = parseInt(quoteNumber, 10);
-    if (!isNaN(current)) {
-      localStorage.setItem('lastQuoteNumber', current.toString());
-    }
-  };
 
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     let newCep = e.target.value.replace(/\D/g, '');
@@ -157,6 +153,15 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
   const discount = discountType === 'percentage' ? (subtotal * discountInput) / 100 : discountInput;
   const total = Math.max(0, subtotal - discount) + shipping;
 
+  const saveQuoteNumber = () => {
+    if (!initialQuote && quoteNumber) {
+      const num = parseInt(quoteNumber, 10);
+      if (!isNaN(num)) {
+        localStorage.setItem('lastQuoteNumber', num.toString());
+      }
+    }
+  };
+
   const handleSaveQuoteData = () => {
     if (!clientName.trim()) {
       alert('Por favor, informe o nome do cliente.');
@@ -169,10 +174,7 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
     }
 
     if (onSaveQuote) {
-      if (!initialQuote) {
-        saveQuoteNumber();
-      }
-      
+      saveQuoteNumber();
       onSaveQuote({
         ...(initialQuote ? { id: initialQuote.id, createdAt: initialQuote.createdAt } : {}),
         quoteNumber,
@@ -210,6 +212,7 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
       return;
     }
 
+    saveQuoteNumber();
     const productDescription = items.map(i => `${i.quantity}x ${i.description}`).join(', ');
     
     let generatedNotes = `--- ORÇAMENTO APROVADO ---\n`;
@@ -228,10 +231,6 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
     if (shipping > 0) generatedNotes += `Frete: ${formatCurrency(shipping)}\n`;
     generatedNotes += `Total Final: ${formatCurrency(total)}\n`;
     if (notes) generatedNotes += `\nObservações: ${notes}`;
-
-    if (!initialQuote) {
-      saveQuoteNumber();
-    }
     
     onCreateOrder({
       clientName,
@@ -244,21 +243,23 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
     });
   };
 
-  const handleArtworkUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleArtworkUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 10 * 1024 * 1024) {
         alert('A imagem deve ter no máximo 10MB');
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
+      try {
+        const compressedDataUrl = await compressImage(file);
         setArtwork({
           name: file.name,
-          data: reader.result as string
+          data: compressedDataUrl
         });
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('Error compressing image:', error);
+        alert('Erro ao processar a imagem. Tente novamente.');
+      }
     }
   };
 
@@ -409,9 +410,8 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
                 <input
                   type="text"
                   value={quoteNumber}
-                  onChange={(e) => setQuoteNumber(e.target.value)}
-                  placeholder="Ex: 001/2026"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
+                  disabled
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none bg-gray-100 text-gray-500 cursor-not-allowed"
                 />
               </div>
               <div>

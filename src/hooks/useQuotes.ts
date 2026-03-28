@@ -8,7 +8,12 @@ export function useQuotes() {
   });
 
   useEffect(() => {
-    localStorage.setItem('quotes', JSON.stringify(quotes));
+    try {
+      localStorage.setItem('quotes', JSON.stringify(quotes));
+    } catch (e) {
+      console.error('Error saving quotes to localStorage:', e);
+      alert('Erro ao salvar: limite de armazenamento do navegador atingido. Tente remover imagens de orçamentos antigos.');
+    }
   }, [quotes]);
 
   const addQuote = (quote: Omit<Quote, 'id' | 'createdAt'>) => {

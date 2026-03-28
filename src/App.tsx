@@ -369,6 +369,7 @@ export default function App() {
                 onDelete={deleteOrder}
                 onPrint={handlePrintOrder}
                 emptyMessage="Nenhum pedido em produção no momento."
+                showStatusFilter={true}
               />
             ) : viewMode === 'sent' ? (
               <div className="space-y-4">

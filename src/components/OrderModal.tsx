@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Order, OrderStatus, Product } from '../types';
 import { X } from 'lucide-react';
-import { formatCurrency } from '../utils';
+import { formatCurrency, compressImage } from '../utils';
 
 interface OrderModalProps {
   isOpen: boolean;
@@ -102,18 +102,20 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
     }
   };
 
-  const handleArtworkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleArtworkChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        alert('O arquivo é muito grande. O limite é 2MB para armazenamento local.');
+      if (file.size > 10 * 1024 * 1024) {
+        alert('A imagem deve ter no máximo 10MB');
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setArtwork({ name: file.name, data: reader.result as string });
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressedDataUrl = await compressImage(file);
+        setArtwork({ name: file.name, data: compressedDataUrl });
+      } catch (error) {
+        console.error('Error compressing image:', error);
+        alert('Erro ao processar a imagem. Tente novamente.');
+      }
     }
   };
 

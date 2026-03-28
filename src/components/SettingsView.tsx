@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Upload, Save, CheckCircle } from 'lucide-react';
 import { CompanySettings } from '../types';
+import { compressImage } from '../utils';
 
 export function SettingsView() {
   const [settings, setSettings] = useState<CompanySettings>({
@@ -25,16 +26,20 @@ export function SettingsView() {
     setTimeout(() => setSaved(false), 3000);
   };
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        alert('A imagem é muito grande. O limite é 2MB.');
+      if (file.size > 10 * 1024 * 1024) {
+        alert('A imagem deve ter no máximo 10MB');
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => setSettings({ ...settings, logo: reader.result as string });
-      reader.readAsDataURL(file);
+      try {
+        const compressedDataUrl = await compressImage(file);
+        setSettings({ ...settings, logo: compressedDataUrl });
+      } catch (error) {
+        console.error('Error compressing image:', error);
+        alert('Erro ao processar a imagem. Tente novamente.');
+      }
     }
   };
 

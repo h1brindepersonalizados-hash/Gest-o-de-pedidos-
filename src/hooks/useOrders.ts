@@ -15,7 +15,12 @@ export function useOrders() {
   });
 
   useEffect(() => {
-    localStorage.setItem('orders', JSON.stringify(orders));
+    try {
+      localStorage.setItem('orders', JSON.stringify(orders));
+    } catch (e) {
+      console.error('Error saving orders to localStorage:', e);
+      alert('Erro ao salvar: limite de armazenamento do navegador atingido. Tente remover imagens de pedidos antigos.');
+    }
   }, [orders]);
 
   const addOrder = (order: Omit<Order, 'id'>) => {

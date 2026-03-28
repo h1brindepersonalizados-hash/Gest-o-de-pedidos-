@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { Order } from '../types';
+import React, { useState, useMemo } from 'react';
+import { Order, OrderStatus } from '../types';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrency } from '../utils';
-import { Edit2, Trash2, Paperclip, Package, Image as ImageIcon, Printer } from 'lucide-react';
+import { Edit2, Trash2, Paperclip, Package, Image as ImageIcon, Printer, Filter } from 'lucide-react';
 import { useValueVisibility } from '../contexts/ValueVisibilityContext';
 
 interface OrderListProps {
@@ -12,10 +12,12 @@ interface OrderListProps {
   onDelete: (id: string) => void;
   onPrint?: (order: Order) => void;
   emptyMessage?: string;
+  showStatusFilter?: boolean;
 }
 
-export function OrderList({ orders, onEdit, onDelete, onPrint, emptyMessage = "Nenhum pedido encontrado." }: OrderListProps) {
+export function OrderList({ orders, onEdit, onDelete, onPrint, emptyMessage = "Nenhum pedido encontrado.", showStatusFilter = false }: OrderListProps) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | 'todos'>('todos');
   const { isVisible } = useValueVisibility();
 
   const getStatusColor = (status: Order['status']) => {
@@ -44,6 +46,16 @@ export function OrderList({ orders, onEdit, onDelete, onPrint, emptyMessage = "N
     }
   };
 
+  const filteredOrders = useMemo(() => {
+    if (statusFilter === 'todos') return orders;
+    return orders.filter(order => order.status === statusFilter);
+  }, [orders, statusFilter]);
+
+  const uniqueStatuses = useMemo(() => {
+    const statuses = new Set(orders.map(o => o.status));
+    return Array.from(statuses);
+  }, [orders]);
+
   if (orders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center bg-white rounded-2xl shadow-sm border border-gray-100">
@@ -54,24 +66,49 @@ export function OrderList({ orders, onEdit, onDelete, onPrint, emptyMessage = "N
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm text-gray-600">
-          <thead className="bg-gray-50 text-gray-900 border-b border-gray-100">
-            <tr>
-              <th className="px-6 py-4 font-semibold">Cliente / Produto</th>
-              <th className="px-6 py-4 font-semibold">Datas (Costureira / Envio)</th>
-              <th className="px-6 py-4 font-semibold">Valor Total</th>
-              <th className="px-6 py-4 font-semibold">Entrada</th>
-              <th className="px-6 py-4 font-semibold">Status</th>
-              <th className="px-6 py-4 font-semibold">Arte</th>
-              <th className="px-6 py-4 font-semibold">Orçamento</th>
-              <th className="px-6 py-4 font-semibold text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {orders.map((order) => (
-              <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+    <div className="space-y-4">
+      {showStatusFilter && uniqueStatuses.length > 0 && (
+        <div className="flex items-center gap-2 bg-white p-3 rounded-xl shadow-sm border border-gray-100">
+          <Filter className="h-4 w-4 text-gray-500" />
+          <span className="text-sm font-medium text-gray-700">Filtrar por Status:</span>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as OrderStatus | 'todos')}
+            className="ml-2 text-sm border-gray-300 rounded-lg focus:ring-sky-500 focus:border-sky-500"
+          >
+            <option value="todos">Todos</option>
+            {uniqueStatuses.map(status => (
+              <option key={status} value={status}>{getStatusText(status)}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm text-gray-600">
+            <thead className="bg-gray-50 text-gray-900 border-b border-gray-100">
+              <tr>
+                <th className="px-6 py-4 font-semibold">Cliente / Produto</th>
+                <th className="px-6 py-4 font-semibold">Datas (Costureira / Envio)</th>
+                <th className="px-6 py-4 font-semibold">Valor Total</th>
+                <th className="px-6 py-4 font-semibold">Entrada</th>
+                <th className="px-6 py-4 font-semibold">Status</th>
+                <th className="px-6 py-4 font-semibold">Arte</th>
+                <th className="px-6 py-4 font-semibold">Orçamento</th>
+                <th className="px-6 py-4 font-semibold text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filteredOrders.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
+                    Nenhum pedido encontrado com o status selecionado.
+                  </td>
+                </tr>
+              ) : (
+                filteredOrders.map((order) => (
+                  <tr key={order.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4">
                   <div className="font-medium text-gray-900">{order.clientName}</div>
                   <div className="text-gray-500">{order.product}</div>
@@ -157,10 +194,12 @@ export function OrderList({ orders, onEdit, onDelete, onPrint, emptyMessage = "N
                   )}
                 </td>
               </tr>
-            ))}
+            ))
+          )}
           </tbody>
         </table>
       </div>
+    </div>
     </div>
   );
 }
