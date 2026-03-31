@@ -1,121 +1,71 @@
-import React, { useState, useEffect } from 'react';
-import { Order, OrderStatus, Product } from '../types';
+import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import { formatCurrency, compressImage } from '../utils';
 
 interface OrderModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (order: Omit<Order, 'id'> | Order) => void;
-  initialData?: Order | null;
-  prefilledData?: Partial<Order> | null;
-  selectedDate?: string;
-  products?: Product[];
+  onSaveSuccess?: () => void;
 }
 
-export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData, selectedDate, products = [] }: OrderModalProps) {
-  const [clientName, setClientName] = useState('');
-  const [product, setProduct] = useState('');
-  const [value, setValue] = useState('');
-  const [downPayment, setDownPayment] = useState('');
-  const [deliveryDate, setDeliveryDate] = useState('');
-  const [seamstressDate, setSeamstressDate] = useState('');
-  const [status, setStatus] = useState<OrderStatus>('pendente');
-  const [notes, setNotes] = useState('');
-  const [quoteFile, setQuoteFile] = useState<{ name: string; data: string } | undefined>();
-  const [artwork, setArtwork] = useState<{ name: string; data: string } | undefined>();
-
-  useEffect(() => {
-    if (initialData) {
-      setClientName(initialData.clientName);
-      setProduct(initialData.product);
-      setValue(initialData.value.toString());
-      setDownPayment(initialData.downPayment?.toString() || '');
-      setDeliveryDate(initialData.deliveryDate);
-      setSeamstressDate(initialData.seamstressDate || '');
-      setStatus(initialData.status);
-      setNotes(initialData.notes);
-      setQuoteFile(initialData.quoteFile);
-      setArtwork(initialData.artwork);
-    } else if (prefilledData) {
-      setClientName(prefilledData.clientName || '');
-      setProduct(prefilledData.product || '');
-      setValue(prefilledData.value?.toString() || '');
-      setDownPayment(prefilledData.downPayment?.toString() || '');
-      setDeliveryDate(prefilledData.deliveryDate || selectedDate || new Date().toISOString().split('T')[0]);
-      setSeamstressDate(prefilledData.seamstressDate || '');
-      setStatus(prefilledData.status || 'pendente');
-      setNotes(prefilledData.notes || '');
-      setQuoteFile(prefilledData.quoteFile);
-      setArtwork(prefilledData.artwork);
-    } else {
-      setClientName('');
-      setProduct('');
-      setValue('');
-      setDownPayment('');
-      setDeliveryDate(selectedDate || new Date().toISOString().split('T')[0]);
-      setSeamstressDate('');
-      setStatus('pendente');
-      setNotes('');
-      setQuoteFile(undefined);
-      setArtwork(undefined);
-    }
-  }, [initialData, prefilledData, selectedDate, isOpen]);
+export function OrderModal({ isOpen, onClose, onSaveSuccess }: OrderModalProps) {
+  const [nome, setNome] = useState('');
+  const [contato, setContato] = useState('');
+  const [tema, setTema] = useState('');
+  const [produto, setProduto] = useState('');
+  const [valor, setValor] = useState('');
+  const [quantidade, setQuantidade] = useState('1');
+  const [dataEnvio, setDataEnvio] = useState('');
+  const [dataLimite, setDataLimite] = useState('');
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const orderData = {
-      clientName,
-      product,
-      value: parseFloat(value) || 0,
-      downPayment: downPayment ? parseFloat(downPayment) : undefined,
-      deliveryDate,
-      seamstressDate,
-      status,
-      notes,
-      quoteFile,
-      artwork,
+
+    const payload = {
+      nome,
+      contato,
+      tema,
+      produto,
+      valor: parseFloat(valor) || 0,
+      quantidade: parseInt(quantidade, 10) || 1,
+      data_envio: dataEnvio,
+      data_limite: dataLimite
     };
 
-    if (initialData) {
-      onSave({ ...orderData, id: initialData.id });
-    } else {
-      onSave(orderData);
-    }
-    onClose();
-  };
+    try {
+      const response = await fetch('https://hqvwjpqehclqrtahjqkt.supabase.com/rest/v1/pedidos', {
+        method: 'POST',
+        headers: {
+          'apikey': 'sb_publishable_ozWh_BdL4Wh5z1RTThCehw_qZJakgX1',
+          'Authorization': 'Bearer sb_publishable_ozWh_BdL4Wh5z1RTThCehw_qZJakgX1',
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(payload)
+      });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        alert('O arquivo é muito grande. O limite é 2MB para armazenamento local.');
-        return;
+      if (!response.ok) {
+        throw new Error('Falha na requisição');
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setQuoteFile({ name: file.name, data: reader.result as string });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
-  const handleArtworkChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        alert('A imagem deve ter no máximo 10MB');
-        return;
-      }
-      try {
-        const compressedDataUrl = await compressImage(file);
-        setArtwork({ name: file.name, data: compressedDataUrl });
-      } catch (error) {
-        console.error('Error compressing image:', error);
-        alert('Erro ao processar a imagem. Tente novamente.');
-      }
+      alert('Salvo com sucesso');
+      
+      // Limpar formulário
+      setNome('');
+      setContato('');
+      setTema('');
+      setProduto('');
+      setValor('');
+      setQuantidade('1');
+      setDataEnvio('');
+      setDataLimite('');
+      
+      if (onSaveSuccess) onSaveSuccess();
+      onClose();
+    } catch (error) {
+      console.error(error);
+      alert('Erro ao salvar');
     }
   };
 
@@ -123,9 +73,7 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 print:hidden">
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-800">
-            {initialData ? 'Editar Pedido' : 'Novo Pedido'}
-          </h2>
+          <h2 className="text-xl font-semibold text-gray-800">Novo Pedido</h2>
           <button onClick={onClose} className="rounded-full p-2 hover:bg-gray-100">
             <X className="h-5 w-5 text-gray-500" />
           </button>
@@ -133,182 +81,43 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, prefilledData
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Nome do Cliente</label>
-            <input
-              type="text"
-              required
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
-              placeholder="Ex: João da Silva"
-            />
+            <label className="mb-1 block text-sm font-medium text-gray-700">Nome</label>
+            <input type="text" required value={nome} onChange={(e) => setNome(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400" />
           </div>
-
-          <div className="relative">
-            <label className="mb-1 block text-sm font-medium text-gray-700">Produto Solicitado</label>
-            <input
-              type="text"
-              required
-              list="modal-products-list"
-              value={product}
-              onChange={(e) => {
-                const val = e.target.value;
-                setProduct(val);
-                
-                const selectedProduct = products.find(p => 
-                  p.description === val || 
-                  (p.code && `${p.code} - ${p.description}` === val)
-                );
-                
-                if (selectedProduct) {
-                  setValue(selectedProduct.price.toString());
-                  if (val === `${selectedProduct.code} - ${selectedProduct.description}`) {
-                    setProduct(selectedProduct.description);
-                  }
-                }
-              }}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
-              placeholder="Ex: Caneca Personalizada"
-            />
-            <datalist id="modal-products-list">
-              {products.map(p => (
-                <option key={p.id} value={p.code ? `${p.code} - ${p.description}` : p.description}>
-                  {formatCurrency(p.price)}
-                </option>
-              ))}
-            </datalist>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Contato</label>
+            <input type="text" required value={contato} onChange={(e) => setContato(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400" />
           </div>
-
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Tema</label>
+            <input type="text" required value={tema} onChange={(e) => setTema(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400" />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Produto</label>
+            <input type="text" required value={produto} onChange={(e) => setProduto(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400" />
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Valor Total (R$)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                required
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
-                placeholder="0.00"
-              />
+              <label className="mb-1 block text-sm font-medium text-gray-700">Valor (R$)</label>
+              <input type="number" step="0.01" required value={valor} onChange={(e) => setValor(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400" />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Entrada (R$)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={downPayment}
-                onChange={(e) => setDownPayment(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
-                placeholder="0.00"
-              />
+              <label className="mb-1 block text-sm font-medium text-gray-700">Quantidade</label>
+              <input type="number" required value={quantidade} onChange={(e) => setQuantidade(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400" />
             </div>
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Data Limite (Costureira)</label>
-              <input
-                type="date"
-                value={seamstressDate}
-                onChange={(e) => setSeamstressDate(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
-              />
+              <label className="mb-1 block text-sm font-medium text-gray-700">Data de Envio</label>
+              <input type="date" required value={dataEnvio} onChange={(e) => setDataEnvio(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400" />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Data de Envio (Cliente)</label>
-              <input
-                type="date"
-                required
-                value={deliveryDate}
-                onChange={(e) => setDeliveryDate(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
-              />
+              <label className="mb-1 block text-sm font-medium text-gray-700">Data Limite</label>
+              <input type="date" required value={dataLimite} onChange={(e) => setDataLimite(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400" />
             </div>
           </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Status</label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as OrderStatus)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
-            >
-                <option value="pendente">Pendente</option>
-                <option value="aguardando_arte">Aguardando Arte</option>
-                <option value="imprimir">Imprimir</option>
-                <option value="costura">Costura</option>
-                <option value="em_producao">Em Produção</option>
-                <option value="enviado">Enviado</option>
-                <option value="concluido">Concluído</option>
-              </select>
-            </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Observações</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
-              placeholder="Detalhes adicionais do pedido..."
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Imagem da Arte (Opcional)</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleArtworkChange}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100"
-            />
-            {artwork && (
-              <div className="mt-2 flex items-center justify-between rounded-lg bg-gray-50 p-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <img src={artwork.data} alt="Arte" className="h-8 w-8 object-cover rounded" />
-                  <span className="truncate text-gray-600 max-w-[150px]">{artwork.name}</span>
-                </div>
-                <button 
-                  type="button" 
-                  onClick={() => setArtwork(undefined)}
-                  className="text-red-500 hover:text-red-700 font-medium"
-                >
-                  Remover
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Orçamento (PDF/Imagem)</label>
-            <input
-              type="file"
-              accept=".pdf,image/*"
-              onChange={handleFileChange}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100"
-            />
-            {quoteFile && (
-              <div className="mt-2 flex items-center justify-between rounded-lg bg-gray-50 p-2 text-sm">
-                <span className="truncate text-gray-600 max-w-[200px]">{quoteFile.name}</span>
-                <button 
-                  type="button" 
-                  onClick={() => setQuoteFile(undefined)}
-                  className="text-red-500 hover:text-red-700 font-medium"
-                >
-                  Remover
-                </button>
-              </div>
-            )}
-          </div>
-
           <div className="pt-2">
-            <button
-              type="submit"
-              className="w-full rounded-lg bg-sky-400 px-4 py-2 text-center font-medium text-white transition-colors hover:bg-sky-500"
-            >
+            <button type="submit" className="w-full rounded-lg bg-sky-400 px-4 py-2 text-center font-medium text-white transition-colors hover:bg-sky-500">
               Salvar Pedido
             </button>
           </div>

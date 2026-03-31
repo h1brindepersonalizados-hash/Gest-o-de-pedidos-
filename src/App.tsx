@@ -21,7 +21,7 @@ import { useValueVisibility } from './contexts/ValueVisibilityContext';
 type ViewMode = 'dashboard' | 'today' | 'production' | 'delayed' | 'search' | 'quote-generator' | 'saved-quotes' | 'sent' | 'products' | 'reports' | 'settings';
 
 export default function App() {
-  const { orders, addOrder, updateOrder, deleteOrder } = useOrders();
+  const { orders, addOrder, updateOrder, deleteOrder, loading: ordersLoading } = useOrders();
   const { products, addProduct, updateProduct, deleteProduct } = useProducts();
   const { quotes, addQuote, updateQuote, deleteQuote } = useQuotes();
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -50,11 +50,11 @@ export default function App() {
     setSelectedDay(date);
   };
 
-  const handleSaveOrder = (orderData: Omit<Order, 'id'> | Order) => {
+  const handleSaveOrder = async (orderData: Omit<Order, 'id'> | Order) => {
     if ('id' in orderData) {
-      updateOrder(orderData.id, orderData);
+      await updateOrder(orderData.id, orderData);
     } else {
-      addOrder(orderData);
+      await addOrder(orderData);
     }
   };
 
@@ -188,6 +188,14 @@ export default function App() {
       )}
     </button>
   );
+
+  if (ordersLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-sky-50 flex flex-col md:flex-row font-sans print:bg-white print:block print:h-auto print:min-h-0">
@@ -418,11 +426,10 @@ export default function App() {
       <OrderModal
         isOpen={isOrderModalOpen}
         onClose={() => setIsOrderModalOpen(false)}
-        onSave={handleSaveOrder}
-        initialData={editingOrder}
-        prefilledData={prefilledOrderData}
-        selectedDate={selectedDateForNewOrder}
-        products={products}
+        onSaveSuccess={() => {
+          // Opcional: recarregar a página ou refazer o fetch para atualizar a lista
+          window.location.reload();
+        }}
       />
 
       <DayOrdersModal
