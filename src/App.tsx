@@ -426,10 +426,9 @@ export default function App() {
       <OrderModal
         isOpen={isOrderModalOpen}
         onClose={() => setIsOrderModalOpen(false)}
-        onSaveSuccess={() => {
-          // Opcional: recarregar a página ou refazer o fetch para atualizar a lista
-          window.location.reload();
-        }}
+        onSave={handleSaveOrder}
+        initialData={editingOrder || prefilledOrderData || undefined}
+        selectedDate={selectedDateForNewOrder}
       />
 
       <DayOrdersModal
