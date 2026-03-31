@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Order } from '../types';
 
-const SUPABASE_URL = 'https://hqvwjpqehclqrtahjqkt.supabase.com/rest/v1/pedidos';
+const SUPABASE_URL = 'https://hqvwjpqehclqrtahjqkt.supabase.co/rest/v1/pedidos';
 const ANON_KEY = 'sb_publishable_ozWh_BdL4Wh5z1RTThCehw_qZJakgX1';
 
 const headers = {

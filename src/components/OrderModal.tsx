@@ -23,6 +23,7 @@ export function OrderModal({ isOpen, onClose, onSaveSuccess }: OrderModalProps) 
     e.preventDefault();
 
     const payload = {
+      id: crypto.randomUUID(), // Garante um ID único para cada novo registro (força INSERT)
       nome,
       contato,
       tema,
@@ -34,8 +35,8 @@ export function OrderModal({ isOpen, onClose, onSaveSuccess }: OrderModalProps) 
     };
 
     try {
-      const response = await fetch('https://hqvwjpqehclqrtahjqkt.supabase.com/rest/v1/pedidos', {
-        method: 'POST',
+      const response = await fetch('https://hqvwjpqehclqrtahjqkt.supabase.co/rest/v1/pedidos', {
+        method: 'POST', // POST no Supabase REST API é estritamente um INSERT
         headers: {
           'apikey': 'sb_publishable_ozWh_BdL4Wh5z1RTThCehw_qZJakgX1',
           'Authorization': 'Bearer sb_publishable_ozWh_BdL4Wh5z1RTThCehw_qZJakgX1',
