@@ -94,7 +94,6 @@ export function OrderList({ orders, onEdit, onDelete, onPrint, emptyMessage = "N
                 <th className="px-6 py-4 font-semibold">Valor Total</th>
                 <th className="px-6 py-4 font-semibold">Entrada</th>
                 <th className="px-6 py-4 font-semibold">Status</th>
-                <th className="px-6 py-4 font-semibold">Arte</th>
                 <th className="px-6 py-4 font-semibold">Orçamento</th>
                 <th className="px-6 py-4 font-semibold text-right">Ações</th>
               </tr>
@@ -135,26 +134,6 @@ export function OrderList({ orders, onEdit, onDelete, onPrint, emptyMessage = "N
                   <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusColor(order.status)}`}>
                     {getStatusText(order.status)}
                   </span>
-                </td>
-                <td className="px-6 py-4">
-                  {order.artwork ? (
-                    <div className="flex items-center">
-                      <img 
-                        src={order.artwork.data} 
-                        alt={order.artwork.name} 
-                        className="h-12 w-12 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
-                        onClick={() => {
-                          const win = window.open();
-                          if (win) {
-                            win.document.write(`<iframe src="${order.artwork!.data}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
-                          }
-                        }}
-                        title="Clique para ampliar"
-                      />
-                    </div>
-                  ) : (
-                    <span className="text-gray-400">-</span>
-                  )}
                 </td>
                 <td className="px-6 py-4">
                   {order.quoteFile ? (

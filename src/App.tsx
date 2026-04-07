@@ -53,8 +53,10 @@ export default function App() {
   const handleSaveOrder = async (orderData: Omit<Order, 'id'> | Order) => {
     if ('id' in orderData) {
       await updateOrder(orderData.id, orderData);
+      alert("Pedido atualizado com sucesso!");
     } else {
       await addOrder(orderData);
+      alert("Pedido salvo com sucesso!");
     }
   };
 

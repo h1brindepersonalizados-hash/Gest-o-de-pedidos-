@@ -43,13 +43,13 @@ export interface Quote {
   shipping: number;
   total: number;
   notes: string;
-  artwork?: { name: string; data: string } | null;
   createdAt: string;
 }
 
 export interface Order {
   id: string;
   clientName: string;
+  clientPhone?: string;
   product: string;
   value: number;
   downPayment?: number;
@@ -58,6 +58,5 @@ export interface Order {
   status: OrderStatus;
   notes: string;
   quoteFile?: { name: string; data: string };
-  artwork?: { name: string; data: string };
   createdAt?: string; // YYYY-MM-DDTHH:mm:ss.sssZ format
 }

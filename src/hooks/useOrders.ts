@@ -30,6 +30,25 @@ export function useOrders() {
     };
     const newOrders = [newOrder, ...orders];
     saveOrders(newOrders);
+
+    // Integração com script externo (Google Sheets, etc) solicitada
+    try {
+      await fetch("SUA_URL_DO_SCRIPT", {
+        method: "POST",
+        body: JSON.stringify({
+          tipo: "pedido",
+          nome: newOrder.clientName,
+          telefone: newOrder.clientPhone || "",
+          produto: newOrder.product,
+          valor: newOrder.value,
+          status: "Em produção" // Conforme solicitado no snippet
+        })
+      });
+      // Opcional: alert("Pedido salvo com sucesso!");
+    } catch (error) {
+      console.error("Erro ao enviar para o script:", error);
+    }
+
     return newOrder;
   };
 

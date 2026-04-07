@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, FileText, CheckCircle, Printer, Upload, Settings, ChevronDown, ChevronUp, AlertCircle, Save } from 'lucide-react';
-import { formatCurrency, isValidDocument, compressImage } from '../utils';
+import { Plus, Trash2, FileText, CheckCircle, Printer, Settings, ChevronDown, ChevronUp, AlertCircle, Save } from 'lucide-react';
+import { formatCurrency, isValidDocument } from '../utils';
 import { Order, Product, CompanySettings, Quote, QuoteItem } from '../types';
 import { format, parseISO } from 'date-fns';
 import { useValueVisibility } from '../contexts/ValueVisibilityContext';
@@ -35,7 +35,6 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
   const [discountType, setDiscountType] = useState<'fixed' | 'percentage'>('fixed');
   const [shipping, setShipping] = useState<number>(0);
   const [notes, setNotes] = useState('');
-  const [artwork, setArtwork] = useState<{ name: string; data: string } | null>(null);
   
   const [company, setCompany] = useState<CompanySettings>({
     name: 'H1 Brindes Personalizados',
@@ -65,7 +64,6 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
       setDiscountType('fixed');
       setShipping(initialQuote.shipping);
       setNotes(initialQuote.notes);
-      setArtwork(initialQuote.artwork || null);
     } else {
       const savedLastNumber = localStorage.getItem('lastQuoteNumber');
       if (savedLastNumber) {
@@ -195,8 +193,7 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
         discount,
         shipping,
         total,
-        notes,
-        artwork: artwork || null
+        notes
       });
     }
   };
@@ -234,33 +231,13 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
     
     onCreateOrder({
       clientName,
+      clientPhone,
       product: productDescription,
       value: total,
       deliveryDate: deliveryDate || undefined,
       notes: generatedNotes,
-      status: 'pendente',
-      artwork: artwork || undefined
+      status: 'pendente'
     });
-  };
-
-  const handleArtworkUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        alert('A imagem deve ter no máximo 10MB');
-        return;
-      }
-      try {
-        const compressedDataUrl = await compressImage(file);
-        setArtwork({
-          name: file.name,
-          data: compressedDataUrl
-        });
-      } catch (error) {
-        console.error('Error compressing image:', error);
-        alert('Erro ao processar a imagem. Tente novamente.');
-      }
-    }
   };
 
   const getPrintView = () => (
@@ -361,14 +338,6 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
           <div className="py-2">
             <p className="text-sm text-gray-700 whitespace-pre-wrap break-words leading-relaxed">{notes}</p>
           </div>
-        </div>
-      )}
-
-      {/* Artwork */}
-      {artwork && (
-        <div className="mt-8 break-inside-avoid print:hidden">
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 border-b border-gray-200 pb-2">Arte / Referência</p>
-          <img src={artwork.data} alt="Arte" className="max-w-full max-h-[8cm] rounded-lg border border-gray-200 object-contain mt-4" />
         </div>
       )}
 
@@ -654,39 +623,6 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
                     placeholder="Condições de pagamento, prazos específicos, etc."
                     className="w-full resize-none rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
                   />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Arte / Referência
-                  </label>
-                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:border-sky-400 transition-colors bg-gray-50">
-                    <div className="space-y-1 text-center">
-                      {artwork ? (
-                        <div className="flex flex-col items-center">
-                          <img src={artwork.data} alt="Preview" className="h-32 object-contain mb-4 rounded-lg shadow-sm" />
-                          <div className="flex text-sm text-gray-600">
-                            <label className="relative cursor-pointer rounded-md bg-white font-medium text-sky-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-sky-500 focus-within:ring-offset-2 hover:text-sky-500">
-                              <span>Trocar imagem</span>
-                              <input type="file" className="sr-only" accept="image/*" onChange={handleArtworkUpload} />
-                            </label>
-                            <p className="pl-1">ou arraste e solte</p>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                          <div className="flex text-sm text-gray-600 mt-4">
-                            <label className="relative cursor-pointer rounded-md bg-white font-medium text-sky-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-sky-500 focus-within:ring-offset-2 hover:text-sky-500">
-                              <span>Fazer upload de um arquivo</span>
-                              <input type="file" className="sr-only" accept="image/*" onChange={handleArtworkUpload} />
-                            </label>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-2">PNG, JPG, GIF até 10MB</p>
-                        </>
-                      )}
-                    </div>
-                  </div>
                 </div>
               </div>
               
