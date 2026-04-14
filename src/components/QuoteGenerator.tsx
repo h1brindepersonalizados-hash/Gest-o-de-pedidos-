@@ -236,7 +236,8 @@ export function QuoteGenerator({ onCreateOrder, onSaveQuote, initialQuote, produ
       value: total,
       deliveryDate: deliveryDate || undefined,
       notes: generatedNotes,
-      status: 'pendente'
+      status: 'pendente',
+      source: 'direta'
     });
   };
 

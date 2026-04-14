@@ -1,6 +1,6 @@
 import React from 'react';
 import { Order } from '../types';
-import { X, Edit2, Trash2, Package, Paperclip, Image as ImageIcon, Printer } from 'lucide-react';
+import { X, Edit2, Trash2, Package, Paperclip, Image as ImageIcon, Printer, ShoppingBag, Store } from 'lucide-react';
 import { formatCurrency } from '../utils';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -13,6 +13,7 @@ interface DayOrdersModalProps {
   orders: Order[];
   onEdit: (order: Order) => void;
   onDelete: (id: string) => void;
+  onBulkDelete?: (ids: string[]) => void;
   onAddOrder: (date: string) => void;
   onPrint?: (order: Order) => void;
 }
@@ -24,10 +25,13 @@ export function DayOrdersModal({
   orders,
   onEdit,
   onDelete,
+  onBulkDelete,
   onAddOrder,
   onPrint,
 }: DayOrdersModalProps) {
   const [confirmDeleteId, setConfirmDeleteId] = React.useState<string | null>(null);
+  const [selectedOrders, setSelectedOrders] = React.useState<Set<string>>(new Set());
+  const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = React.useState(false);
   const { isVisible } = useValueVisibility();
 
   if (!isOpen || !date) return null;
@@ -61,6 +65,50 @@ export function DayOrdersModal({
     }
   };
 
+  const getSourceBadge = (source?: string) => {
+    switch (source) {
+      case 'shopee':
+        return (
+          <span className="inline-flex items-center gap-1 rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium text-orange-800" title="Origem: Shopee">
+            <ShoppingBag className="h-3 w-3" />
+            Shopee
+          </span>
+        );
+      case 'elo7':
+        return (
+          <span className="inline-flex items-center gap-1 rounded bg-yellow-100 px-1.5 py-0.5 text-[10px] font-medium text-yellow-800" title="Origem: Elo7">
+            <Store className="h-3 w-3" />
+            Elo7
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-medium text-sky-800" title="Origem: Venda Direta">
+            <Package className="h-3 w-3" />
+            Direta
+          </span>
+        );
+    }
+  };
+
+  const handleSelectOrder = (id: string) => {
+    const newSelected = new Set(selectedOrders);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedOrders(newSelected);
+  };
+
+  const handleBulkDelete = () => {
+    if (onBulkDelete && selectedOrders.size > 0) {
+      onBulkDelete(Array.from(selectedOrders));
+      setSelectedOrders(new Set());
+      setIsBulkDeleteConfirmOpen(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4 print:hidden">
       <div className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl bg-white shadow-xl">
@@ -75,6 +123,39 @@ export function DayOrdersModal({
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
+          {selectedOrders.size > 0 && (
+            <div className="mb-4 flex items-center justify-between bg-sky-50 p-3 rounded-xl border border-sky-100">
+              <span className="text-sm font-medium text-sky-800">
+                {selectedOrders.size} {selectedOrders.size === 1 ? 'pedido selecionado' : 'pedidos selecionados'}
+              </span>
+              {isBulkDeleteConfirmOpen ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-red-600 mr-2">Tem certeza?</span>
+                  <button 
+                    onClick={() => setIsBulkDeleteConfirmOpen(false)}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    onClick={handleBulkDelete}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700"
+                  >
+                    Sim, excluir
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => setIsBulkDeleteConfirmOpen(true)}
+                  className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Excluir Selecionados
+                </button>
+              )}
+            </div>
+          )}
+
           {orders.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <Package className="mb-3 h-12 w-12 text-gray-300" />
@@ -89,9 +170,18 @@ export function DayOrdersModal({
                 >
                   <div className="mb-2 flex items-start justify-between">
                     <div>
-                      <h3 className="font-semibold text-gray-800">{order.clientName}</h3>
-                      <p className="text-sm text-gray-600">{order.product}</p>
-                      <div className="mt-1 flex flex-col gap-0.5 text-xs">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <input 
+                          type="checkbox" 
+                          className="rounded border-gray-300 text-sky-500 focus:ring-sky-500 mt-0.5"
+                          checked={selectedOrders.has(order.id)}
+                          onChange={() => handleSelectOrder(order.id)}
+                        />
+                        <h3 className="font-semibold text-gray-800">{order.clientName}</h3>
+                        {getSourceBadge(order.source)}
+                      </div>
+                      <p className="text-sm text-gray-600 ml-6">{order.product}</p>
+                      <div className="mt-1 flex flex-col gap-0.5 text-xs ml-6">
                         {order.seamstressDate && (
                           <span className="text-pink-600 font-medium">
                             Costura: {format(parseISO(order.seamstressDate), "dd/MM/yyyy")}
@@ -117,12 +207,6 @@ export function DayOrdersModal({
                         className="rounded p-1.5 text-gray-500 hover:bg-white hover:text-sky-500"
                       >
                         <Edit2 className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => setConfirmDeleteId(order.id)}
-                        className="rounded p-1.5 text-gray-500 hover:bg-white hover:text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </div>

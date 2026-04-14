@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { Order, OrderStatus } from '../types';
+import { Order, OrderStatus, OrderSource } from '../types';
 
 interface OrderModalProps {
   isOpen: boolean;
@@ -18,6 +18,7 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, selectedDate 
   const [downPayment, setDownPayment] = useState('');
   const [deliveryDate, setDeliveryDate] = useState('');
   const [status, setStatus] = useState<OrderStatus>('pendente');
+  const [source, setSource] = useState<OrderSource>('direta');
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
@@ -30,6 +31,7 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, selectedDate 
         setDownPayment(initialData.downPayment?.toString() || '');
         setDeliveryDate(initialData.deliveryDate || selectedDate || new Date().toISOString().split('T')[0]);
         setStatus(initialData.status || 'pendente');
+        setSource(initialData.source || 'direta');
         setNotes(initialData.notes || '');
       } else {
         setClientName('');
@@ -39,6 +41,7 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, selectedDate 
         setDownPayment('');
         setDeliveryDate(selectedDate || new Date().toISOString().split('T')[0]);
         setStatus('pendente');
+        setSource('direta');
         setNotes('');
       }
     }
@@ -57,6 +60,7 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, selectedDate 
       downPayment: downPayment ? parseFloat(downPayment) : undefined,
       deliveryDate,
       status,
+      source,
       notes
     };
 
@@ -114,17 +118,26 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, selectedDate 
               <input type="date" required value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400" />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Status</label>
-              <select value={status} onChange={(e) => setStatus(e.target.value as OrderStatus)} className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400">
-                <option value="pendente">Pendente</option>
-                <option value="aguardando_arte">Aguardando Arte</option>
-                <option value="imprimir">Para Imprimir</option>
-                <option value="costura">Para Costura</option>
-                <option value="em_producao">Em Produção</option>
-                <option value="enviado">Enviado</option>
-                <option value="concluido">Concluído</option>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Origem do Pedido</label>
+              <select value={source} onChange={(e) => setSource(e.target.value as OrderSource)} className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400">
+                <option value="direta">Venda Direta</option>
+                <option value="shopee">Shopee</option>
+                <option value="elo7">Elo7</option>
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Status</label>
+            <select value={status} onChange={(e) => setStatus(e.target.value as OrderStatus)} className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400">
+              <option value="pendente">Pendente</option>
+              <option value="aguardando_arte">Aguardando Arte</option>
+              <option value="imprimir">Para Imprimir</option>
+              <option value="costura">Para Costura</option>
+              <option value="em_producao">Em Produção</option>
+              <option value="enviado">Enviado</option>
+              <option value="concluido">Concluído</option>
+            </select>
           </div>
 
           <div>

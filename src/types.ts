@@ -1,4 +1,5 @@
 export type OrderStatus = 'pendente' | 'aguardando_arte' | 'imprimir' | 'costura' | 'em_producao' | 'enviado' | 'concluido';
+export type OrderSource = 'direta' | 'shopee' | 'elo7';
 
 export interface Product {
   id: string;
@@ -56,6 +57,7 @@ export interface Order {
   deliveryDate: string; // YYYY-MM-DD format
   seamstressDate?: string; // YYYY-MM-DD format
   status: OrderStatus;
+  source?: OrderSource;
   notes: string;
   quoteFile?: { name: string; data: string };
   createdAt?: string; // YYYY-MM-DDTHH:mm:ss.sssZ format

@@ -13,20 +13,22 @@ import { ProductList } from './components/ProductList';
 import { Reports } from './components/Reports';
 import { SettingsView } from './components/SettingsView';
 import { OrderPrintView } from './components/OrderPrintView';
+import { ImportOrdersModal } from './components/ImportOrdersModal';
 import { Order, Quote } from './types';
 import { addMonths, subMonths, format, parseISO, isBefore, startOfDay, isSameDay } from 'date-fns';
-import { Plus, Search, Package2, LayoutDashboard, AlertTriangle, Clock, CalendarDays, Menu, X, Calculator, Send, Download, Package, FileSpreadsheet, Settings, Archive, Eye, EyeOff } from 'lucide-react';
+import { Plus, Search, Package2, LayoutDashboard, AlertTriangle, Clock, CalendarDays, Menu, X, Calculator, Send, Download, Package, FileSpreadsheet, Settings, Archive, Eye, EyeOff, List } from 'lucide-react';
 import { useValueVisibility } from './contexts/ValueVisibilityContext';
 
-type ViewMode = 'dashboard' | 'today' | 'production' | 'delayed' | 'search' | 'quote-generator' | 'saved-quotes' | 'sent' | 'products' | 'reports' | 'settings';
+type ViewMode = 'dashboard' | 'delayed' | 'search' | 'quote-generator' | 'saved-quotes' | 'my-orders' | 'products' | 'reports' | 'settings';
 
 export default function App() {
-  const { orders, addOrder, updateOrder, deleteOrder, loading: ordersLoading } = useOrders();
+  const { orders, addOrder, addMultipleOrders, updateOrder, deleteOrder, deleteMultipleOrders, loading: ordersLoading } = useOrders();
   const { products, addProduct, updateProduct, deleteProduct } = useProducts();
   const { quotes, addQuote, updateQuote, deleteQuote } = useQuotes();
   const [currentDate, setCurrentDate] = useState(new Date());
   
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [prefilledOrderData, setPrefilledOrderData] = useState<Partial<Order> | null>(null);
   const [selectedDateForNewOrder, setSelectedDateForNewOrder] = useState<string | undefined>();
@@ -58,6 +60,12 @@ export default function App() {
       await addOrder(orderData);
       alert("Pedido salvo com sucesso!");
     }
+  };
+
+  const handleImportOrders = async (newOrders: Omit<Order, 'id' | 'createdAt'>[]) => {
+    await addMultipleOrders(newOrders);
+    alert(`${newOrders.length} pedidos importados com sucesso!`);
+    setViewMode('my-orders');
   };
 
   const handleEditOrder = (order: Order) => {
@@ -102,44 +110,6 @@ export default function App() {
   const delayedOrders = useMemo(() => orders.filter(
     (o) => o.status !== 'concluido' && isBefore(startOfDay(parseISO(o.deliveryDate)), today)
   ), [orders, today]);
-
-  const todayOrders = useMemo(() => orders.filter(
-    (o) => o.status !== 'concluido' && isSameDay(startOfDay(parseISO(o.deliveryDate)), today)
-  ), [orders, today]);
-
-  const productionOrders = useMemo(() => orders.filter(
-    (o) => o.status === 'em_producao' || o.status === 'aguardando_arte' || o.status === 'imprimir' || o.status === 'costura'
-  ), [orders]);
-
-  const sentOrders = useMemo(() => orders.filter(
-    (o) => o.status === 'enviado'
-  ), [orders]);
-
-  const handleDownloadSentOrders = () => {
-    const csvContent = '\uFEFF' + [
-      ['Data Costureira', 'Data Envio', 'Cliente', 'Produto', 'Valor Total', 'Entrada', 'Status', 'Observacoes'].join(';'),
-      ...sentOrders.map(o => [
-        o.seamstressDate ? format(parseISO(o.seamstressDate), 'dd/MM/yyyy') : '',
-        format(parseISO(o.deliveryDate), 'dd/MM/yyyy'),
-        `"${o.clientName.replace(/"/g, '""')}"`,
-        `"${o.product.replace(/"/g, '""')}"`,
-        o.value.toFixed(2).replace('.', ','),
-        (o.downPayment || 0).toFixed(2).replace('.', ','),
-        o.status,
-        `"${o.notes ? o.notes.replace(/\n/g, ' ').replace(/"/g, '""') : ''}"`
-      ].join(';'))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `pedidos_enviados_${format(new Date(), 'yyyy_MM')}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
@@ -232,7 +202,7 @@ export default function App() {
             <h1 className="text-xl font-bold text-pink-600 tracking-tight">Gestão de Pedidos</h1>
           </div>
 
-          <div className="px-4 py-2">
+          <div className="px-4 py-2 space-y-2">
             <button
               onClick={() => handleAddOrderForDay()}
               className="w-full flex items-center justify-center gap-2 rounded-xl bg-sky-400 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-sky-500 transition-colors"
@@ -240,18 +210,23 @@ export default function App() {
               <Plus className="h-5 w-5" />
               Novo Pedido
             </button>
+            <button
+              onClick={() => setIsImportModalOpen(true)}
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-white border-2 border-sky-100 px-4 py-2.5 text-sm font-semibold text-sky-600 shadow-sm hover:bg-sky-50 hover:border-sky-200 transition-colors"
+            >
+              <FileSpreadsheet className="h-5 w-5" />
+              Importar Planilha
+            </button>
           </div>
 
           <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
             <NavItem icon={LayoutDashboard} label="Visão Geral" mode="dashboard" />
+            <NavItem icon={List} label="Meus Pedidos" mode="my-orders" count={orders.length} />
             <NavItem icon={Calculator} label="Gerador de Orçamento" mode="quote-generator" />
             <NavItem icon={Archive} label="Orçamentos Salvos" mode="saved-quotes" count={quotes.length} />
             <NavItem icon={Package} label="Produtos" mode="products" />
             <NavItem icon={FileSpreadsheet} label="Relatórios" mode="reports" />
             <NavItem icon={Settings} label="Configurações" mode="settings" />
-            <NavItem icon={CalendarDays} label="Entregar Hoje" mode="today" count={todayOrders.length} />
-            <NavItem icon={Clock} label="Em Produção" mode="production" count={productionOrders.length} />
-            <NavItem icon={Send} label="Enviados" mode="sent" count={sentOrders.length} />
             <NavItem icon={AlertTriangle} label="Atrasados" mode="delayed" count={delayedOrders.length} />
           </nav>
         </div>
@@ -295,9 +270,7 @@ export default function App() {
                viewMode === 'products' ? 'Produtos' :
                viewMode === 'reports' ? 'Relatórios' :
                viewMode === 'settings' ? 'Configurações' :
-               viewMode === 'today' ? 'Entregar Hoje' : 
-               viewMode === 'production' ? 'Em Produção' : 
-               viewMode === 'sent' ? 'Pedidos Enviados' :
+               viewMode === 'my-orders' ? 'Meus Pedidos' : 
                viewMode === 'delayed' ? 'Pedidos Atrasados' : 'Resultados da Busca'}
             </h2>
             <div className="flex items-center gap-4 w-full sm:w-auto">
@@ -332,6 +305,7 @@ export default function App() {
                 orders={searchResults} 
                 onEdit={handleEditOrder} 
                 onDelete={deleteOrder}
+                onBulkDelete={deleteMultipleOrders}
                 onPrint={handlePrintOrder}
                 emptyMessage={`Nenhum pedido encontrado para "${searchQuery}"`}
               />
@@ -364,49 +338,25 @@ export default function App() {
               <Reports orders={orders} />
             ) : viewMode === 'settings' ? (
               <SettingsView />
-            ) : viewMode === 'today' ? (
+            ) : viewMode === 'my-orders' ? (
               <OrderList 
-                orders={todayOrders} 
+                orders={orders} 
                 onEdit={handleEditOrder} 
                 onDelete={deleteOrder}
+                onBulkDelete={deleteMultipleOrders}
                 onPrint={handlePrintOrder}
-                emptyMessage="Nenhum pedido para entregar hoje. Bom trabalho!"
-              />
-            ) : viewMode === 'production' ? (
-              <OrderList 
-                orders={productionOrders} 
-                onEdit={handleEditOrder} 
-                onDelete={deleteOrder}
-                onPrint={handlePrintOrder}
-                emptyMessage="Nenhum pedido em produção no momento."
+                emptyMessage="Nenhum pedido encontrado."
                 showStatusFilter={true}
               />
-            ) : viewMode === 'sent' ? (
-              <div className="space-y-4">
-                <div className="flex justify-end">
-                  <button
-                    onClick={handleDownloadSentOrders}
-                    className="flex items-center gap-2 rounded-lg bg-sky-100 px-4 py-2 text-sm font-medium text-sky-700 hover:bg-sky-200"
-                  >
-                    <Download className="h-4 w-4" />
-                    Baixar Relatório (CSV)
-                  </button>
-                </div>
-                <OrderList 
-                  orders={sentOrders} 
-                  onEdit={handleEditOrder} 
-                  onDelete={deleteOrder}
-                  onPrint={handlePrintOrder}
-                  emptyMessage="Nenhum pedido enviado no momento."
-                />
-              </div>
             ) : viewMode === 'delayed' ? (
               <OrderList 
                 orders={delayedOrders} 
                 onEdit={handleEditOrder} 
                 onDelete={deleteOrder}
                 onPrint={handlePrintOrder}
+                onBulkDelete={deleteMultipleOrders}
                 emptyMessage="Nenhum pedido atrasado. Excelente!"
+                showStatusFilter={true}
               />
             ) : (
               <>
@@ -433,6 +383,12 @@ export default function App() {
         selectedDate={selectedDateForNewOrder}
       />
 
+      <ImportOrdersModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImport={handleImportOrders}
+      />
+
       <DayOrdersModal
         isOpen={!!selectedDay}
         onClose={() => setSelectedDay(null)}
@@ -440,6 +396,7 @@ export default function App() {
         orders={selectedDayOrders}
         onEdit={handleEditOrder}
         onDelete={deleteOrder}
+        onBulkDelete={deleteMultipleOrders}
         onAddOrder={handleAddOrderForDay}
         onPrint={handlePrintOrder}
       />
