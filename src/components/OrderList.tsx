@@ -21,6 +21,7 @@ export function OrderList({ orders, onEdit, onDelete, onBulkDelete, onPrint, emp
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'todos'>('todos');
+  const [sourceFilter, setSourceFilter] = useState<OrderSource | 'todas'>('todas');
   const { isVisible } = useValueVisibility();
 
   const getStatusColor = (status: Order['status']) => {
@@ -86,9 +87,12 @@ export function OrderList({ orders, onEdit, onDelete, onBulkDelete, onPrint, emp
   ];
 
   const filteredOrders = useMemo(() => {
-    if (statusFilter === 'todos') return orders;
-    return orders.filter(order => order.status === statusFilter);
-  }, [orders, statusFilter]);
+    return orders.filter(order => {
+      const statusMatch = statusFilter === 'todos' || order.status === statusFilter;
+      const sourceMatch = sourceFilter === 'todas' || order.source === sourceFilter || (!order.source && sourceFilter === 'direta');
+      return statusMatch && sourceMatch;
+    });
+  }, [orders, statusFilter, sourceFilter]);
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
@@ -128,20 +132,35 @@ export function OrderList({ orders, onEdit, onDelete, onBulkDelete, onPrint, emp
   return (
     <div className="space-y-4">
       {showStatusFilter && (
-        <div className="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm border border-gray-100">
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-gray-500" />
-            <span className="text-sm font-medium text-gray-700">Filtrar por Status:</span>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as OrderStatus | 'todos')}
-              className="ml-2 text-sm border-gray-300 rounded-lg focus:ring-sky-500 focus:border-sky-500"
-            >
-              <option value="todos">Todos</option>
-              {ALL_STATUSES.map(status => (
-                <option key={status} value={status}>{getStatusText(status)}</option>
-              ))}
-            </select>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white p-3 rounded-xl shadow-sm border border-gray-100 gap-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">Status:</span>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as OrderStatus | 'todos')}
+                className="ml-2 text-sm border-gray-300 rounded-lg focus:ring-sky-500 focus:border-sky-500"
+              >
+                <option value="todos">Todos</option>
+                {ALL_STATUSES.map(status => (
+                  <option key={status} value={status}>{getStatusText(status)}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2 sm:border-l sm:pl-4 border-gray-200">
+              <span className="text-sm font-medium text-gray-700">Origem:</span>
+              <select
+                value={sourceFilter}
+                onChange={(e) => setSourceFilter(e.target.value as OrderSource | 'todas')}
+                className="ml-2 text-sm border-gray-300 rounded-lg focus:ring-sky-500 focus:border-sky-500"
+              >
+                <option value="todas">Todas</option>
+                <option value="direta">Venda Direta</option>
+                <option value="shopee">Shopee</option>
+                <option value="elo7">Elo7</option>
+              </select>
+            </div>
           </div>
         </div>
       )}
