@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Upload, FileSpreadsheet, AlertCircle } from 'lucide-react';
 import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 import { Order } from '../types';
 import { addDays, format } from 'date-fns';
 
@@ -41,69 +42,112 @@ export function ImportOrdersModal({ isOpen, onClose, onImport }: ImportOrdersMod
     setIsParsing(true);
     setError(null);
 
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        try {
-          const rows = results.data as any[];
-          const newOrders: Omit<Order, 'id' | 'createdAt'>[] = [];
+    const processData = (rows: any[]) => {
+      try {
+        const newOrders: Omit<Order, 'id' | 'createdAt'>[] = [];
 
-          // Data padrão de entrega: 7 dias a partir de hoje
-          const defaultDeliveryDate = format(addDays(new Date(), 7), 'yyyy-MM-dd');
+        // Data padrão de entrega: 7 dias a partir de hoje
+        const defaultDeliveryDate = format(addDays(new Date(), 7), 'yyyy-MM-dd');
 
-          rows.forEach((row, index) => {
-            let clientName = '';
-            let product = '';
-            let value = 0;
-            let notes = '';
-
-            if (platform === 'shopee') {
-              clientName = row['Nome de usuário (Comprador)'] || row['Nome do Destinatário'] || 'Cliente Shopee';
-              product = row['Nome do Produto'] || row['Número de Referência do SKU'] || 'Produto Shopee';
-              value = parseCurrency(row['Preço Total'] || row['Total do Pedido'] || '0');
-              notes = `Pedido Shopee: ${row['Nº do pedido'] || 'N/A'}`;
-            } else if (platform === 'elo7') {
-              clientName = row['Comprador'] || row['Nome'] || 'Cliente Elo7';
-              product = row['Produto'] || row['Produtos'] || row['Título'] || 'Produto Elo7';
-              value = parseCurrency(row['Total'] || row['Valor Total'] || '0');
-              notes = `Pedido Elo7: ${row['Pedido'] || 'N/A'}`;
+        const getValueFromRow = (row: any, possibleKeys: string[]) => {
+          const rowKeys = Object.keys(row);
+          for (const key of possibleKeys) {
+            const foundKey = rowKeys.find(k => k.trim().toLowerCase() === key.toLowerCase());
+            if (foundKey && row[foundKey] !== undefined && row[foundKey] !== null && row[foundKey] !== '') {
+              return row[foundKey];
             }
-
-            // Ignorar linhas completamente vazias que o papaparse possa ter deixado passar
-            if (clientName === `Cliente ${platform === 'shopee' ? 'Shopee' : 'Elo7'}` && value === 0 && (!row['Nº do pedido'] && !row['Pedido'])) {
-              return;
-            }
-
-            newOrders.push({
-              clientName,
-              product,
-              value,
-              status: 'pendente',
-              source: platform,
-              deliveryDate: defaultDeliveryDate,
-              notes,
-            });
-          });
-
-          if (newOrders.length === 0) {
-            setError('Nenhum pedido válido encontrado na planilha. Verifique se escolheu a plataforma correta.');
-          } else {
-            setParsedOrders(newOrders);
           }
-        } catch (err) {
-          console.error(err);
-          setError('Erro ao processar a planilha. Verifique o formato do arquivo.');
-        } finally {
-          setIsParsing(false);
+          return undefined;
+        };
+
+        rows.forEach((row, index) => {
+          let clientName = '';
+          let product = '';
+          let value = 0;
+          let notes = '';
+          let orderId = '';
+
+          if (platform === 'shopee') {
+            clientName = getValueFromRow(row, ['Nome de usuário (Comprador)', 'Nome do Destinatário', 'Username (Buyer)', 'Nome de usuario (Comprador)']) || 'Cliente Shopee';
+            product = getValueFromRow(row, ['Nome do Produto', 'Número de Referência do SKU', 'Product Name', 'Nome do produto']) || 'Produto Shopee';
+            value = parseCurrency(String(getValueFromRow(row, ['Preço Total', 'Total do Pedido', 'Total Price', 'Preço total']) || '0'));
+            orderId = getValueFromRow(row, ['Nº do pedido', 'ID do Pedido', 'Order ID', 'Nº do Pedido']) || '';
+            notes = `Pedido Shopee: ${orderId || 'N/A'}`;
+          } else if (platform === 'elo7') {
+            clientName = getValueFromRow(row, ['Comprador', 'Nome', 'Buyer']) || 'Cliente Elo7';
+            product = getValueFromRow(row, ['Produto', 'Produtos', 'Título', 'Product']) || 'Produto Elo7';
+            value = parseCurrency(String(getValueFromRow(row, ['Total', 'Valor Total', 'Total Value']) || '0'));
+            orderId = getValueFromRow(row, ['Pedido', 'Order ID', 'ID do Pedido']) || '';
+            notes = `Pedido Elo7: ${orderId || 'N/A'}`;
+          }
+
+          // Ignorar linhas completamente vazias
+          if (clientName === `Cliente ${platform === 'shopee' ? 'Shopee' : 'Elo7'}` && value === 0 && !orderId) {
+            return;
+          }
+
+          newOrders.push({
+            clientName,
+            product,
+            value,
+            status: 'pendente',
+            source: platform,
+            deliveryDate: defaultDeliveryDate,
+            notes,
+          });
+        });
+
+        if (newOrders.length === 0) {
+          setError('Nenhum pedido válido encontrado na planilha. Verifique se escolheu a plataforma correta.');
+        } else {
+          setParsedOrders(newOrders);
         }
-      },
-      error: (error) => {
-        console.error(error);
-        setError('Erro ao ler o arquivo CSV.');
+      } catch (err) {
+        console.error(err);
+        setError('Erro ao processar a planilha. Verifique o formato do arquivo.');
+      } finally {
         setIsParsing(false);
       }
-    });
+    };
+
+    if (file.name.toLowerCase().endsWith('.csv')) {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          processData(results.data as any[]);
+        },
+        error: (error) => {
+          console.error(error);
+          setError('Erro ao ler o arquivo CSV.');
+          setIsParsing(false);
+        }
+      });
+    } else if (file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const json = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+          processData(json);
+        } catch (err) {
+          console.error(err);
+          setError('Erro ao ler o arquivo Excel.');
+          setIsParsing(false);
+        }
+      };
+      reader.onerror = () => {
+        setError('Erro ao ler o arquivo.');
+        setIsParsing(false);
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      setError('Formato de arquivo não suportado. Use .csv ou .xlsx');
+      setIsParsing(false);
+    }
   };
 
   const handleImport = () => {
@@ -164,17 +208,17 @@ export function ImportOrdersModal({ isOpen, onClose, onImport }: ImportOrdersMod
 
           {/* File Upload */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">Arquivo CSV</label>
+            <label className="mb-2 block text-sm font-medium text-gray-700">Arquivo CSV ou XLSX</label>
             <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:border-sky-400 transition-colors bg-gray-50">
               <div className="space-y-1 text-center">
                 <Upload className="mx-auto h-12 w-12 text-gray-400" />
                 <div className="flex text-sm text-gray-600 mt-4 justify-center">
                   <label className="relative cursor-pointer rounded-md bg-white font-medium text-sky-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-sky-500 focus-within:ring-offset-2 hover:text-sky-500">
-                    <span>{file ? file.name : 'Selecionar arquivo CSV'}</span>
-                    <input type="file" className="sr-only" accept=".csv" onChange={handleFileChange} />
+                    <span>{file ? file.name : 'Selecionar arquivo'}</span>
+                    <input type="file" className="sr-only" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" onChange={handleFileChange} />
                   </label>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">Apenas arquivos .csv exportados da plataforma</p>
+                <p className="text-xs text-gray-500 mt-2">Arquivos .csv ou .xlsx exportados da plataforma</p>
               </div>
             </div>
           </div>
