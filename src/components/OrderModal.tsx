@@ -21,14 +21,35 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, selectedDate 
   const [source, setSource] = useState<OrderSource>('direta');
   const [notes, setNotes] = useState('');
 
+  const formatCurrencyInput = (val: string) => {
+    const numbers = val.replace(/\D/g, '');
+    if (!numbers) return '';
+    const amount = parseInt(numbers, 10) / 100;
+    return amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  };
+
+  const parseCurrencyValue = (val: string) => {
+    if (!val) return 0;
+    const numbers = val.replace(/\D/g, '');
+    return parseInt(numbers, 10) / 100;
+  };
+
+  const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValue(formatCurrencyInput(e.target.value));
+  };
+
+  const handleDownPaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDownPayment(formatCurrencyInput(e.target.value));
+  };
+
   useEffect(() => {
     if (isOpen) {
       if (initialData) {
         setClientName(initialData.clientName || '');
         setClientPhone(initialData.clientPhone || '');
         setProduct(initialData.product || '');
-        setValue(initialData.value?.toString() || '');
-        setDownPayment(initialData.downPayment?.toString() || '');
+        setValue(initialData.value ? formatCurrencyInput(initialData.value.toFixed(2)) : '');
+        setDownPayment(initialData.downPayment ? formatCurrencyInput(initialData.downPayment.toFixed(2)) : '');
         setDeliveryDate(initialData.deliveryDate || selectedDate || new Date().toISOString().split('T')[0]);
         setStatus(initialData.status || 'pendente');
         setSource(initialData.source || 'direta');
@@ -56,8 +77,8 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, selectedDate 
       clientName,
       clientPhone,
       product,
-      value: parseFloat(value) || 0,
-      downPayment: downPayment ? parseFloat(downPayment) : undefined,
+      value: parseCurrencyValue(value),
+      downPayment: downPayment ? parseCurrencyValue(downPayment) : undefined,
       deliveryDate,
       status,
       source,
@@ -103,12 +124,12 @@ export function OrderModal({ isOpen, onClose, onSave, initialData, selectedDate 
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Valor Total (R$)</label>
-              <input type="number" step="0.01" required value={value} onChange={(e) => setValue(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400" />
+              <label className="mb-1 block text-sm font-medium text-gray-700">Valor Total</label>
+              <input type="text" required value={value} onChange={handleValueChange} placeholder="R$ 0,00" className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400" />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Sinal / Entrada (R$)</label>
-              <input type="number" step="0.01" value={downPayment} onChange={(e) => setDownPayment(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400" />
+              <label className="mb-1 block text-sm font-medium text-gray-700">Sinal / Entrada</label>
+              <input type="text" value={downPayment} onChange={handleDownPaymentChange} placeholder="R$ 0,00" className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400" />
             </div>
           </div>
 
