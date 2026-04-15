@@ -14,6 +14,7 @@ interface DayOrdersModalProps {
   onEdit: (order: Order) => void;
   onDelete: (id: string) => void;
   onBulkDelete?: (ids: string[]) => void;
+  onBulkPrint?: (orders: Order[]) => void;
   onAddOrder: (date: string) => void;
   onPrint?: (order: Order) => void;
 }
@@ -26,6 +27,7 @@ export function DayOrdersModal({
   onEdit,
   onDelete,
   onBulkDelete,
+  onBulkPrint,
   onAddOrder,
   onPrint,
 }: DayOrdersModalProps) {
@@ -109,6 +111,13 @@ export function DayOrdersModal({
     }
   };
 
+  const handleBulkPrint = () => {
+    if (onBulkPrint && selectedOrders.size > 0) {
+      const ordersToPrint = orders.filter(o => selectedOrders.has(o.id));
+      onBulkPrint(ordersToPrint);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4 print:hidden">
       <div className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl bg-white shadow-xl">
@@ -151,6 +160,15 @@ export function DayOrdersModal({
                 >
                   <Trash2 className="h-4 w-4" />
                   Excluir Selecionados
+                </button>
+              )}
+              {onBulkPrint && !isBulkDeleteConfirmOpen && (
+                <button 
+                  onClick={handleBulkPrint}
+                  className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors ml-2"
+                >
+                  <Printer className="h-4 w-4" />
+                  Imprimir Selecionados
                 </button>
               )}
             </div>

@@ -45,6 +45,19 @@ export default function App() {
     setPrintViewContent(<OrderPrintView order={order} />);
   };
 
+  const handleBulkPrintOrders = (ordersToPrint: Order[]) => {
+    setPrintViewContent(
+      <div className="flex flex-col">
+        {ordersToPrint.map((order, index) => (
+          <div key={order.id} className={index < ordersToPrint.length - 1 ? "print:break-after-page mb-8 print:mb-0" : ""}>
+            <OrderPrintView order={order} />
+            {index < ordersToPrint.length - 1 && <hr className="my-8 border-t-2 border-dashed border-gray-300 print:hidden" />}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const handlePrevMonth = () => setCurrentDate(subMonths(currentDate, 1));
   const handleNextMonth = () => setCurrentDate(addMonths(currentDate, 1));
 
@@ -306,6 +319,7 @@ export default function App() {
                 onEdit={handleEditOrder} 
                 onDelete={deleteOrder}
                 onBulkDelete={deleteMultipleOrders}
+                onBulkPrint={handleBulkPrintOrders}
                 onPrint={handlePrintOrder}
                 emptyMessage={`Nenhum pedido encontrado para "${searchQuery}"`}
               />
@@ -344,6 +358,7 @@ export default function App() {
                 onEdit={handleEditOrder} 
                 onDelete={deleteOrder}
                 onBulkDelete={deleteMultipleOrders}
+                onBulkPrint={handleBulkPrintOrders}
                 onPrint={handlePrintOrder}
                 emptyMessage="Nenhum pedido encontrado."
                 showStatusFilter={true}
@@ -355,6 +370,7 @@ export default function App() {
                 onDelete={deleteOrder}
                 onPrint={handlePrintOrder}
                 onBulkDelete={deleteMultipleOrders}
+                onBulkPrint={handleBulkPrintOrders}
                 emptyMessage="Nenhum pedido atrasado. Excelente!"
                 showStatusFilter={true}
               />
@@ -397,6 +413,7 @@ export default function App() {
         onEdit={handleEditOrder}
         onDelete={deleteOrder}
         onBulkDelete={deleteMultipleOrders}
+        onBulkPrint={handleBulkPrintOrders}
         onAddOrder={handleAddOrderForDay}
         onPrint={handlePrintOrder}
       />

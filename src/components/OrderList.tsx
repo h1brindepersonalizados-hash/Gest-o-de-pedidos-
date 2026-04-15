@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Order, OrderStatus } from '../types';
+import { Order, OrderStatus, OrderSource } from '../types';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrency } from '../utils';
@@ -11,12 +11,13 @@ interface OrderListProps {
   onEdit: (order: Order) => void;
   onDelete: (id: string) => void;
   onBulkDelete?: (ids: string[]) => void;
+  onBulkPrint?: (orders: Order[]) => void;
   onPrint?: (order: Order) => void;
   emptyMessage?: string;
   showStatusFilter?: boolean;
 }
 
-export function OrderList({ orders, onEdit, onDelete, onBulkDelete, onPrint, emptyMessage = "Nenhum pedido encontrado.", showStatusFilter = false }: OrderListProps) {
+export function OrderList({ orders, onEdit, onDelete, onBulkDelete, onBulkPrint, onPrint, emptyMessage = "Nenhum pedido encontrado.", showStatusFilter = false }: OrderListProps) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
@@ -120,6 +121,15 @@ export function OrderList({ orders, onEdit, onDelete, onBulkDelete, onPrint, emp
     }
   };
 
+  const handleBulkPrint = () => {
+    if (onBulkPrint && selectedOrders.size > 0) {
+      const ordersToPrint = orders.filter(o => selectedOrders.has(o.id));
+      onBulkPrint(ordersToPrint);
+      // Optional: clear selection after printing
+      // setSelectedOrders(new Set());
+    }
+  };
+
   if (orders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center bg-white rounded-2xl shadow-sm border border-gray-100">
@@ -193,6 +203,15 @@ export function OrderList({ orders, onEdit, onDelete, onBulkDelete, onPrint, emp
             >
               <Trash2 className="h-4 w-4" />
               Excluir Selecionados
+            </button>
+          )}
+          {onBulkPrint && !isBulkDeleteConfirmOpen && (
+            <button 
+              onClick={handleBulkPrint}
+              className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors ml-2"
+            >
+              <Printer className="h-4 w-4" />
+              Imprimir Selecionados
             </button>
           )}
         </div>
