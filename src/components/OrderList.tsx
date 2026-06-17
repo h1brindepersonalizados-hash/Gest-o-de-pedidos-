@@ -2,8 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { Order, OrderStatus, OrderSource } from '../types';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { formatCurrency } from '../utils';
-import { Edit2, Trash2, Paperclip, Package, Image as ImageIcon, Printer, Filter, ShoppingBag, Store } from 'lucide-react';
+import { formatCurrency, exportToExcel } from '../utils';
+import { Edit2, Trash2, Paperclip, Package, Image as ImageIcon, Printer, Filter, ShoppingBag, Store, Download } from 'lucide-react';
 import { useValueVisibility } from '../contexts/ValueVisibilityContext';
 
 interface OrderListProps {
@@ -130,6 +130,27 @@ export function OrderList({ orders, onEdit, onDelete, onBulkDelete, onBulkPrint,
     }
   };
 
+  const handleExportExcel = () => {
+    const ordersToExport = selectedOrders.size > 0 
+      ? orders.filter(o => selectedOrders.has(o.id)) 
+      : filteredOrders; // export filtered if none selected
+
+    const dataToExport = ordersToExport.map(order => ({
+      'ID Pedido': order.id,
+      'Cliente': order.clientName,
+      'Telefone': order.clientPhone || '',
+      'Produto Descrição': order.product,
+      'Valor Total': order.value,
+      'Entrada / Sinal': order.downPayment || 0,
+      'Data de Entrega': order.deliveryDate ? format(parseISO(order.deliveryDate), 'dd/MM/yyyy') : '',
+      'Status': getStatusText(order.status),
+      'Origem': order.source === 'shopee' ? 'Shopee' : order.source === 'elo7' ? 'Elo7' : 'Venda Direta',
+      'Observações': order.notes || ''
+    }));
+
+    exportToExcel(dataToExport, `pedidos_export_${format(new Date(), 'yyyy-MM-dd')}`);
+  };
+
   if (orders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center bg-white rounded-2xl shadow-sm border border-gray-100">
@@ -172,6 +193,13 @@ export function OrderList({ orders, onEdit, onDelete, onBulkDelete, onBulkPrint,
               </select>
             </div>
           </div>
+          <button 
+            onClick={handleExportExcel}
+            className="hidden sm:flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors border border-green-200 font-medium"
+          >
+            <Download className="h-4 w-4" />
+            Exportar XLS
+          </button>
         </div>
       )}
 
@@ -212,6 +240,15 @@ export function OrderList({ orders, onEdit, onDelete, onBulkDelete, onBulkPrint,
             >
               <Printer className="h-4 w-4" />
               Imprimir Selecionados
+            </button>
+          )}
+          {!isBulkDeleteConfirmOpen && (
+            <button 
+              onClick={handleExportExcel}
+              className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg bg-green-100 text-green-800 hover:bg-green-200 transition-colors ml-2"
+            >
+              <Download className="h-4 w-4" />
+              Exportar Selecionados
             </button>
           )}
         </div>

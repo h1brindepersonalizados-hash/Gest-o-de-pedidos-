@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Quote } from '../types';
-import { FileText, Search, Trash2, Edit2, Calendar, User, DollarSign } from 'lucide-react';
-import { formatCurrency } from '../utils';
+import { FileText, Search, Trash2, Edit2, Calendar, User, DollarSign, Download } from 'lucide-react';
+import { formatCurrency, exportToExcel } from '../utils';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useValueVisibility } from '../contexts/ValueVisibilityContext';
@@ -23,22 +23,51 @@ export function SavedQuotes({ quotes, onEditQuote, onDeleteQuote }: SavedQuotesP
     quote.theme.toLowerCase().includes(searchQuery.toLowerCase())
   ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
+  const handleExportExcel = () => {
+    const dataToExport = filteredQuotes.map(quote => ({
+      'Número': quote.quoteNumber,
+      'Cliente': quote.clientName,
+      'Documento': quote.clientDocument || '',
+      'Telefone': quote.clientPhone || '',
+      'Tema': quote.theme || '',
+      'Data de Entrega': quote.deliveryDate ? format(parseISO(quote.deliveryDate), 'dd/MM/yyyy') : '',
+      'Subtotal': quote.subtotal,
+      'Desconto': quote.discount,
+      'Frete': quote.shipping,
+      'Total': quote.total,
+      'Data Criação': format(new Date(quote.createdAt), 'dd/MM/yyyy HH:mm'),
+      'Itens Qtd': quote.items.reduce((acc, item) => acc + item.quantity, 0)
+    }));
+
+    exportToExcel(dataToExport, `orcamentos_export_${format(new Date(), 'yyyy-MM-dd')}`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <h2 className="text-xl font-bold text-gray-800">Orçamentos Salvos</h2>
         
-        <div className="relative w-full sm:w-72">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
+        <div className="flex w-full sm:w-auto items-center gap-2">
+          <div className="relative flex-1 sm:w-72">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Buscar orçamentos..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
+            />
           </div>
-          <input
-            type="text"
-            placeholder="Buscar orçamentos..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
-          />
+          <button 
+            onClick={handleExportExcel}
+            className="flex items-center gap-2 text-sm px-3 py-2 rounded-xl bg-green-50 text-green-700 hover:bg-green-100 transition-colors border border-green-200 font-medium whitespace-nowrap"
+            title="Exportar Orçamentos para Planilha"
+          >
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">Exportar XLS</span>
+          </button>
         </div>
       </div>
 

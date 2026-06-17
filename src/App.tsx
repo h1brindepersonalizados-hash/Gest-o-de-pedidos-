@@ -349,7 +349,7 @@ export default function App() {
                 onDelete={deleteProduct}
               />
             ) : viewMode === 'reports' ? (
-              <Reports orders={orders} />
+              <Reports orders={orders} quotes={quotes} />
             ) : viewMode === 'settings' ? (
               <SettingsView />
             ) : viewMode === 'my-orders' ? (
